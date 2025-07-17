@@ -49,7 +49,28 @@
             <div id="plan-view" class="view hidden">
                 <div class="flex items-center justify-between mb-2 text-sm text-gray-600"><span id="user-status">Please Login</span><div><button id="login-btn" class="text-indigo-600 hover:underline text-sm">Login</button><button id="signup-btn" class="text-indigo-600 hover:underline text-sm ml-2">Sign Up</button><button id="logout-btn" class="text-red-500 hover:underline text-sm ml-2 hidden">Logout</button></div></div>
                 <div id="day-view-container" class="active"><div class="flex items-center justify-between mb-6"><button id="prev-day-btn" class="p-2 rounded-full hover:bg-gray-200" title="Previous Day"><i class="fas fa-chevron-left text-gray-600"></i></button><h2 id="current-date-header" class="text-xl font-semibold text-center"></h2><button id="next-day-btn" class="p-2 rounded-full hover:bg-gray-200" title="Next Day"><i class="fas fa-chevron-right text-gray-600"></i></button></div><div id="meal-cards-container" class="space-y-4"><div id="breakfast-meal-card" data-meal="breakfast" class="meal-card bg-white p-5 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow"><h3 class="text-lg font-bold text-indigo-600 mb-3">Breakfast</h3><div id="breakfast-card-content" class="space-y-1 text-gray-700 min-h-[2rem]"></div></div><div id="lunch-meal-card" data-meal="lunch" class="meal-card bg-white p-5 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow"><h3 class="text-lg font-bold text-green-600 mb-3">Lunch</h3><div id="lunch-card-content" class="space-y-1 text-gray-700 min-h-[2rem]"></div></div><div id="dinner-meal-card" data-meal="dinner" class="meal-card bg-white p-5 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow"><h3 class="text-lg font-bold text-red-600 mb-3">Dinner</h3><div id="dinner-card-content" class="space-y-1 text-gray-700 min-h-[2rem]"></div></div></div></div>
-                <div id="week-view-container" class="hidden overflow-x-auto"><table class="week-table w-full border-collapse"><thead><tr class="bg-gray-100"><th class="w-20"></th><th class="w-1/7">Mon</th><th class="w-1/7">Tue</th><th class="w-1/7">Wed</th><th class="w-1/7">Thu</th><th class="w-1/7">Fri</th><th class="w-1/7">Sat</th><th class="w-1/7">Sun</th></tr></thead><tbody id="week-plan-table-body"></tbody></table></div>
+                <div id="week-view-container" class="hidden overflow-x-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <button id="prev-week-btn" class="p-2 rounded-full hover:bg-gray-200" title="Previous Week"><i class="fas fa-chevron-left text-gray-600"></i></button>
+                        <h2 id="current-week-header" class="text-xl font-semibold text-center"></h2>
+                        <button id="next-week-btn" class="p-2 rounded-full hover:bg-gray-200" title="Next Week"><i class="fas fa-chevron-right text-gray-600"></i></button>
+                    </div>
+                    <table class="week-table w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="w-20"></th>
+                                <th class="w-1/7">Mon</th>
+                                <th class="w-1/7">Tue</th>
+                                <th class="w-1/7">Wed</th>
+                                <th class="w-1/7">Thu</th>
+                                <th class="w-1/7">Fri</th>
+                                <th class="w-1/7">Sat</th>
+                                <th class="w-1/7">Sun</th>
+                            </tr>
+                        </thead>
+                        <tbody id="week-plan-table-body"></tbody>
+                    </table>
+                </div>
             </div>
             <div id="dishes-view" class="view hidden"><div class="flex justify-between items-center mb-4"><div class="flex space-x-2"><button class="filter-btn active flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg" data-filter="all">All</button><button class="filter-btn flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg border" data-filter="main">Main</button><button class="filter-btn flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg border" data-filter="gravy">Gravy</button><button class="filter-btn flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg border" data-filter="side">Side</button></div><button id="migrate-btn" class="text-sm text-indigo-600 hover:underline" title="Import dishes from TSV data">Migrate Data</button></div><div id="dishes-list" class="space-y-3"></div><button id="add-dish-btn" class="fixed bottom-24 right-4 bg-indigo-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-20" title="Add New Dish"><i class="fas fa-plus text-2xl"></i></button></div>
             <div id="shopping-view" class="view hidden"><h2 class="text-xl font-bold text-gray-900 mb-4">Shopping List</h2><div id="shopping-list-container" class="space-y-4"></div></div>
@@ -136,6 +157,9 @@
                     healthGoalsBtn: document.getElementById('health-goals-btn'),
                     autoPopulateBtn: document.getElementById('auto-populate-btn'),
                     generateShoppingListBtn: document.getElementById('generate-shopping-list-btn'),
+                    currentWeekHeader: document.getElementById('current-week-header'), // New
+                    prevWeekBtn: document.getElementById('prev-week-btn'), // New
+                    nextWeekBtn: document.getElementById('next-week-btn'), // New
 					copyWeekBtn: document.getElementById('copy-week-btn'),
                 },
                 dishesView: {
@@ -350,6 +374,9 @@
                         targetDayDate.setDate(targetWeekStart.getDate() + i);
                         const targetDateStringFormatted = formatDate(targetDayDate);
 
+                        console.log(`%c[COPY_WEEK] Copying from ${sourceDateString} to ${targetDateStringFormatted}`, LOG_STYLE);
+                        console.log(`%c[COPY_WEEK] Source Plan for ${sourceDateString}:`, LOG_STYLE, currentWeekMealPlans[sourceDateString]);
+
                         const sourcePlan = currentWeekMealPlans[sourceDateString] || {};
                         batch.set(doc(db, 'artifacts', appId, 'users', userId, 'meal_plans', targetDateStringFormatted), sourcePlan, { merge: false }); // Overwrite target day's plan
                     }
@@ -367,7 +394,6 @@
                     }
 
                 } catch (error) {
-                    console.error("Error copying week menu:", error);
                     showMessage(`Failed to copy week menu: ${error.message}`);
                 } finally {
                     ui.copyWeekFields.confirmBtn.disabled = false;
@@ -467,6 +493,10 @@
                 const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
                 const mealTypes = ['breakfast', 'lunch', 'dinner'];
                 await fetchWeekMealPlans(currentDate); 
+                console.log(`%c[RENDER] Week View - currentDate for fetch: ${formatDate(currentDate)}`, LOG_STYLE);
+                console.log(`%c[RENDER] Week View - currentWeekMealPlans after fetch:`, LOG_STYLE, currentWeekMealPlans);
+
+                let weekIsEmpty = true;
 
                 mealTypes.forEach(mealType => {
                     const row = document.createElement('tr');
@@ -478,6 +508,9 @@
                         dayDate.setDate(weekStart.getDate() + dayIndex);
                         const dateString = formatDate(dayDate);
                         const meal = currentWeekMealPlans[dateString]?.[mealType] || {};
+                        if (meal && (meal.main || meal.gravy || meal.side)) {
+                            weekIsEmpty = false; // Found at least one meal
+                        }
                         const cell = document.createElement('td');
                         cell.className = 'meal-cell';
                         cell.dataset.date = dateString;
@@ -487,6 +520,9 @@
                     });
                     ui.planView.weekPlanTableBody.appendChild(row);
                 });
+                if (weekIsEmpty) {
+                    ui.planView.weekPlanTableBody.innerHTML += `<tr><td colspan="8" class="text-center text-gray-500 py-8">No meals planned for this week.</td></tr>`;
+                }
 				console.log('%c[UI] Week view table rendered.', LOG_STYLE);
 
                 // Add event listeners to week view cells
@@ -1308,7 +1344,14 @@
             // --- Navigation & View Control ---
             const changeDay = (offset) => {
                 currentDate.setDate(currentDate.getDate() + offset);
+                console.log(`%c[NAV] Changing day to: ${formatDate(currentDate)}`, LOG_STYLE);
                 renderDayView(new Date(currentDate));
+            };
+
+            const changeWeek = (offset) => {
+                currentDate.setDate(currentDate.getDate() + (offset * 7)); // Move by 7 days
+                console.log(`%c[NAV] Changing week to: ${formatDate(currentDate)}`, LOG_STYLE);
+                renderWeekView();
             };
             
             const switchView = (viewId, title) => {
@@ -1326,7 +1369,23 @@
                 ui.planView.dayViewContainer.classList.toggle('hidden');
                 ui.planView.weekViewContainer.classList.toggle('hidden');
                 ui.planView.weekViewToggleBtn.innerHTML = currentViewMode === 'week' ? '<i class="fas fa-calendar-day text-xl"></i>' : '<i class="fas fa-calendar-week text-xl"></i>';
-                if (currentViewMode === 'week') renderWeekView(); else renderDayView(currentDate);
+                ui.planView.prevWeekBtn.addEventListener('click', () => changeWeek(-1)); // Add this line
+                ui.planView.nextWeekBtn.addEventListener('click', () => changeWeek(1));  // Add this line
+
+                // Toggle visibility of day-specific vs. week-specific navigation elements
+                ui.planView.prevDayBtn.classList.toggle('hidden', currentViewMode === 'week');
+                ui.planView.nextDayBtn.classList.toggle('hidden', currentViewMode === 'week');
+                ui.planView.currentDateHeader.classList.toggle('hidden', currentViewMode === 'week');
+
+                ui.planView.prevWeekBtn.classList.toggle('hidden', currentViewMode === 'day');
+                ui.planView.nextWeekBtn.classList.toggle('hidden', currentViewMode === 'day');
+                ui.planView.currentWeekHeader.classList.toggle('hidden', currentViewMode === 'day');
+
+                if (currentViewMode === 'week') {
+                    renderWeekView(); 
+                } else {
+                    renderDayView(currentDate);
+                }
             };
             
             // --- Authentication Logic ---
@@ -1346,6 +1405,20 @@
                 ui.headerTitle.textContent = 'Login'; // Set header title to Login on app load/logout
                 document.getElementById('main-nav').classList.add('hidden'); // Hide navigation by default
 
+                // Hide all header buttons and day/week navigation controls initially
+                const headerButtons = [
+                    ui.planView.weekViewToggleBtn, ui.planView.clearPlanBtn, ui.planView.copyWeekBtn,
+                    ui.planView.healthGoalsBtn, ui.planView.autoPopulateBtn, ui.planView.generateShoppingListBtn
+                ];
+                headerButtons.forEach(btn => btn.classList.add('hidden'));
+                ui.planView.prevDayBtn.classList.add('hidden');
+                ui.planView.nextDayBtn.classList.add('hidden');
+                ui.planView.currentDateHeader.classList.add('hidden');
+                ui.planView.prevWeekBtn.classList.add('hidden');
+                ui.planView.nextWeekBtn.classList.add('hidden');
+                ui.planView.currentWeekHeader.classList.add('hidden');
+ 
+
                 if (user) {
                     ui.planView.userStatus.textContent = user.email;
                     ui.planView.loginBtn.classList.add('hidden');
@@ -1355,6 +1428,14 @@
                     ui.modals.auth.classList.add('hidden'); // Ensure auth modal is hidden after successful login
                     ui.modals.auth.classList.remove('flex'); // Ensure auth modal is hidden after successful login
                     ui.views[0].classList.add('active'); // Show plan view after login
+                    // Show header buttons and day navigation after login
+                    headerButtons.forEach(btn => btn.classList.remove('hidden'));
+                    ui.planView.prevDayBtn.classList.remove('hidden');
+                    ui.planView.nextDayBtn.classList.remove('hidden');
+                    ui.planView.currentDateHeader.classList.remove('hidden');
+                    ui.planView.prevWeekBtn.classList.add('hidden'); // Always start in day view for week nav
+                    ui.planView.nextWeekBtn.classList.add('hidden'); // Always start in day view for week nav
+
                     ui.navButtons[0].classList.add('active'); // Activate Plan button
                     ui.headerTitle.textContent = 'Meal Plan'; // Reset header to Meal Plan
                     document.getElementById('main-nav').classList.remove('hidden'); // Show navigation
