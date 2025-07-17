@@ -43,21 +43,20 @@
             </div>
         </header>
 
-        <main id="main-content" class="p-4">
-            <div id="plan-view" class="view active">
-                <div class="flex items-center justify-between mb-2 text-sm text-gray-600 hidden"><span id="user-status">Please Login</span><div><button id="login-btn" class="text-indigo-600 hover:underline text-sm">Login</button><button id="signup-btn" class="text-indigo-600 hover:underline text-sm ml-2">Sign Up</button><button id="logout-btn" class="text-red-500 hover:underline text-sm ml-2 hidden">Logout</button></div></div>
+        <main id="main-content" class="p-4 opacity-50 pointer-events-none">
+            <div id="plan-view" class="view hidden">
+                <div class="flex items-center justify-between mb-2 text-sm text-gray-600"><span id="user-status">Please Login</span><div><button id="login-btn" class="text-indigo-600 hover:underline text-sm">Login</button><button id="signup-btn" class="text-indigo-600 hover:underline text-sm ml-2">Sign Up</button><button id="logout-btn" class="text-red-500 hover:underline text-sm ml-2 hidden">Logout</button></div></div>
                 <div id="day-view-container" class="active"><div class="flex items-center justify-between mb-6"><button id="prev-day-btn" class="p-2 rounded-full hover:bg-gray-200" title="Previous Day"><i class="fas fa-chevron-left text-gray-600"></i></button><h2 id="current-date-header" class="text-xl font-semibold text-center"></h2><button id="next-day-btn" class="p-2 rounded-full hover:bg-gray-200" title="Next Day"><i class="fas fa-chevron-right text-gray-600"></i></button></div><div id="meal-cards-container" class="space-y-4"><div id="breakfast-meal-card" data-meal="breakfast" class="meal-card bg-white p-5 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow"><h3 class="text-lg font-bold text-indigo-600 mb-3">Breakfast</h3><div id="breakfast-card-content" class="space-y-1 text-gray-700 min-h-[2rem]"></div></div><div id="lunch-meal-card" data-meal="lunch" class="meal-card bg-white p-5 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow"><h3 class="text-lg font-bold text-green-600 mb-3">Lunch</h3><div id="lunch-card-content" class="space-y-1 text-gray-700 min-h-[2rem]"></div></div><div id="dinner-meal-card" data-meal="dinner" class="meal-card bg-white p-5 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow"><h3 class="text-lg font-bold text-red-600 mb-3">Dinner</h3><div id="dinner-card-content" class="space-y-1 text-gray-700 min-h-[2rem]"></div></div></div></div>
                 <div id="week-view-container" class="hidden overflow-x-auto"><table class="week-table w-full border-collapse"><thead><tr class="bg-gray-100"><th class="w-20"></th><th class="w-1/7">Mon</th><th class="w-1/7">Tue</th><th class="w-1/7">Wed</th><th class="w-1/7">Thu</th><th class="w-1/7">Fri</th><th class="w-1/7">Sat</th><th class="w-1/7">Sun</th></tr></thead><tbody id="week-plan-table-body"></tbody></table></div>
             </div>
-            <div id="dishes-view" class="view"><div class="flex justify-between items-center mb-4 hidden"><div class="flex space-x-2"><button class="filter-btn active flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg" data-filter="all">All</button><button class="filter-btn flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg border" data-filter="main">Main</button><button class="filter-btn flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg border" data-filter="gravy">Gravy</button><button class="filter-btn flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg border" data-filter="side">Side</button></div><button id="migrate-btn" class="text-sm text-indigo-600 hover:underline" title="Import dishes from TSV data">Migrate Data</button></div><div id="dishes-list" class="space-y-3"></div><button id="add-dish-btn" class="fixed bottom-24 right-4 bg-indigo-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-20" title="Add New Dish"><i class="fas fa-plus text-2xl"></i></button></div>
-            <div id="shopping-view" class="view"><h2 class="text-xl font-bold text-gray-900 mb-4 hidden">Shopping List</h2><div id="shopping-list-container" class="space-y-4"></div></div>
-            <div id="fridge-view" class="view"><div id="fridge-list" class="space-y-2"></div></div>
+            <div id="dishes-view" class="view hidden"><div class="flex justify-between items-center mb-4"><div class="flex space-x-2"><button class="filter-btn active flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg" data-filter="all">All</button><button class="filter-btn flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg border" data-filter="main">Main</button><button class="filter-btn flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg border" data-filter="gravy">Gravy</button><button class="filter-btn flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg border" data-filter="side">Side</button></div><button id="migrate-btn" class="text-sm text-indigo-600 hover:underline" title="Import dishes from TSV data">Migrate Data</button></div><div id="dishes-list" class="space-y-3"></div><button id="add-dish-btn" class="fixed bottom-24 right-4 bg-indigo-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-20" title="Add New Dish"><i class="fas fa-plus text-2xl"></i></button></div>
+            <div id="shopping-view" class="view hidden"><h2 class="text-xl font-bold text-gray-900 mb-4">Shopping List</h2><div id="shopping-list-container" class="space-y-4"></div></div>
+            <div id="fridge-view" class="view hidden"><div id="fridge-list" class="space-y-2"></div></div>
         </main>
 
-        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around max-w-lg mx-auto z-10"><a href="#" class="nav-btn active flex-1 text-center py-3" data-view="plan-view" data-title="Meal Plan" hidden><i class="fas fa-calendar-day text-xl"></i><span class="block text-xs font-medium">Plan</span></a><a href="#" class="nav-btn flex-1 text-center py-3 text-gray-500 hover:text-indigo-600" data-view="dishes-view" data-title="My Dishes"><i class="fas fa-utensils text-xl"></i><span class="block text-xs font-medium">Dishes</span></a><a href="#" class="nav-btn flex-1 text-center py-3 text-gray-500 hover:text-indigo-600" data-view="shopping-view" data-title="Shopping List"><i class="fas fa-list-check text-xl"></i><span class="block text-xs font-medium">Shopping</span></a><a href="#" class="nav-btn flex-1 text-center py-3 text-gray-500 hover:text-indigo-600" data-view="fridge-view" data-title="Fridge Inventory"><i class="fas fa-carrot text-xl"></i><span class="block text-xs font-medium">Fridge</span></a></nav>
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around max-w-lg mx-auto z-10 hidden" id="main-nav"><a href="#" class="nav-btn active flex-1 text-center py-3" data-view="plan-view" data-title="Meal Plan"><i class="fas fa-calendar-day text-xl"></i><span class="block text-xs font-medium">Plan</span></a><a href="#" class="nav-btn flex-1 text-center py-3 text-gray-500 hover:text-indigo-600" data-view="dishes-view" data-title="My Dishes"><i class="fas fa-utensils text-xl"></i><span class="block text-xs font-medium">Dishes</span></a><a href="#" class="nav-btn flex-1 text-center py-3 text-gray-500 hover:text-indigo-600" data-view="shopping-view" data-title="Shopping List"><i class="fas fa-list-check text-xl"></i><span class="block text-xs font-medium">Shopping</span></a><a href="#" class="nav-btn flex-1 text-center py-3 text-gray-500 hover:text-indigo-600" data-view="fridge-view" data-title="Fridge Inventory"><i class="fas fa-carrot text-xl"></i><span class="block text-xs font-medium">Fridge</span></a></nav>
     </div>
 
-    <!-- Modals -->
     <div id="edit-meal-modal" class="fixed inset-0 z-30 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-full max-w-md"><div class="p-6"><h2 id="modal-title" class="text-2xl font-bold mb-4">Edit Meal</h2><div class="space-y-4"><div><label for="main-select" class="block text-sm font-medium text-gray-700">Main</label><select id="main-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select></div><div><label for="gravy-select" class="block text-sm font-medium text-gray-700">Gravy</label><select id="gravy-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select></div><div><label for="side-select" class="block text-sm font-medium text-gray-700">Side</label><select id="side-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select></div></div></div><div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3"><button id="cancel-meal-btn" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button id="save-meal-btn" type="button" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">Save</button></div></div></div>
     <div id="dish-form-modal" class="fixed inset-0 z-30 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-full overflow-y-auto"><form id="dish-form" class="p-6"><h2 id="dish-form-title" class="text-2xl font-bold mb-4">Add New Dish</h2><div class="space-y-4"><div><label for="dish-name" class="block text-sm font-medium text-gray-700">Dish Name</label><input type="text" id="dish-name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></div><div><label for="dish-type" class="block text-sm font-medium text-gray-700">Type</label><select id="dish-type" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"><option>Main</option><option>Gravy</option><option>Side</option></select></div><div><label class="block text-sm font-medium text-gray-700">Intended Meal(s)</label><div class="mt-2 space-x-4"><label class="inline-flex items-center"><input type="checkbox" id="is-breakfast" class="rounded border-gray-300 text-indigo-600 shadow-sm"> <span class="ml-2">Breakfast</span></label><label class="inline-flex items-center"><input type="checkbox" id="is-lunch" class="rounded border-gray-300 text-indigo-600 shadow-sm"> <span class="ml-2">Lunch</span></label><label class="inline-flex items-center"><input type="checkbox" id="is-dinner" class="rounded border-gray-300 text-indigo-600 shadow-sm"> <span class="ml-2">Dinner</span></label></div></div><div id="associations-main-group" class="hidden"><label for="associated-mains" class="block text-sm font-medium text-gray-700">Associated Mains</label><select id="associated-mains" multiple class="form-multiselect mt-1 block w-full"></select></div><div id="associations-gravy-group" class="hidden"><label for="associated-gravies" class="block text-sm font-medium text-gray-700">Associated Gravies</label><select id="associated-gravies" multiple class="form-multiselect mt-1 block w-full"></select></div><div id="associations-side-group" class="hidden"><label for="associated-sides" class="block text-sm font-medium text-gray-700">Associated Sides</label><select id="associated-sides" multiple class="form-multiselect mt-1 block w-full"></select></div><div><label for="basic-ingredients" class="block text-sm font-medium text-gray-700">Basic Ingredients (comma-separated)</label><textarea id="basic-ingredients" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></textarea></div><div><label for="presoak-ingredients" class="block text-sm font-medium text-gray-700">Presoak Ingredients (comma-separated)</label><textarea id="presoak-ingredients" rows="2" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></textarea></div><div class="flex items-center"><input id="remind-presoak" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="remind-presoak" class="ml-2 block text-sm text-gray-900">Always remind for presoak?</label></div><div><label class="block text-sm font-medium text-gray-700">Health Scores (1-5)</label><div class="grid grid-cols-4 gap-2 mt-1"><input type="number" id="carb-score" placeholder="Carb" min="1" max="5" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"><input type="number" id="protein-score" placeholder="Protein" min="1" max="5" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"><input type="number" id="fat-score" placeholder="Fat" min="1" max="5" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"><input type="number" id="fiber-score" placeholder="Fiber" min="1" max="5" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div></div></div></form><div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3"><button id="cancel-dish-btn" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button id="save-dish-btn" type="button" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">Save Dish</button></div></div></div>
     <div id="migration-modal" class="fixed inset-0 z-30 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg"><div class="p-6"><h2 class="text-2xl font-bold mb-4">Migrate Data from TSV</h2><p class="text-sm text-gray-600 mb-4">Paste your TSV data below. The data should include the headers from your file.</p><p class="text-xs text-gray-500 mb-4">Expected headers: Food, Type, Cuisine, Breakfast, Lunch, Dinner, Associated Gravy Names (CSV), etc.</p><textarea id="csv-data-input" class="w-full h-48 border border-gray-300 rounded-md p-2" placeholder="Paste TSV data here..."></textarea><div class="mt-4 flex items-start"><div class="flex items-center h-5"><input id="clear-existing-data" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"></div><div class="ml-3 text-sm"><label for="clear-existing-data" class="font-medium text-red-600">Clear all existing dishes before importing</label><p class="text-gray-500">Warning: This cannot be undone.</p></div></div></div><div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3"><button id="cancel-migration-btn" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button id="import-data-btn" type="button" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">Import</button></div></div></div>
@@ -744,6 +743,7 @@
                 };
                 await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'user_settings', 'health_goals'), goals);
                 weeklyHealthGoals = goals;
+                localStorage.setItem('weeklyHealthGoals', JSON.stringify(weeklyHealthGoals)); // Save to localStorage
                 showMessage('Health goals saved!');
                 closeModal(ui.modals.healthGoals);
             };
@@ -961,13 +961,24 @@
             };
             const loadHealthGoals = async () => {
                 const userId = getFirestoreUserId();
-                if (!userId) return;
+                // Attempt to load from localStorage first for persistence
+                const localGoals = localStorage.getItem('weeklyHealthGoals');
+                if (localGoals) {
+                    weeklyHealthGoals = JSON.parse(localGoals);
+                    console.log('%c[DB] Health goals loaded from localStorage.', 'color: green;', weeklyHealthGoals);
+                    return;
+                }
+                
+                if (!userId) return; // If no user and no local storage, return default (empty)
+
                 const snap = await getDoc(doc(db, 'artifacts', appId, 'users', userId, 'user_settings', 'health_goals'));
                 if (snap.exists()) {
                     weeklyHealthGoals = snap.data();
+                    console.log('%c[DB] Health goals loaded from Firestore.', 'color: green;', weeklyHealthGoals);
                 } else {
-                    // Set default if not found
-                    weeklyHealthGoals = { breakfast: {}, lunch: {}, dinner: {} };
+                    // Set default if not found in Firestore or localStorage
+                    weeklyHealthGoals = { breakfast: { carb: 0, protein: 0, fat: 0, fiber: 0 }, lunch: { carb: 0, protein: 0, fat: 0, fiber: 0 }, dinner: { carb: 0, protein: 0, fat: 0, fiber: 0 } };
+                    console.log('%c[DB] No health goals found, initialized to default.', 'color: orange;', weeklyHealthGoals);
                 }
             };
 
@@ -1096,6 +1107,8 @@
                 }
                 await batch.commit();
                 showMessage('Entire week cleared!');
+                // Explicitly clear shopping list UI
+                renderShoppingList({ missingBasic: [], presoakReminders: [] });
             };
 
             // --- Event Listeners ---
@@ -1200,18 +1213,37 @@
             // --- Authentication Logic ---
             const updateAuthUI = (user) => {
                 console.log(`%c[AUTH] Updating UI for user:`, LOG_STYLE, user);
+                // Hide all main views and navigation by default
+                ui.views.forEach(v => v.classList.add('hidden'));
+                ui.navButtons.forEach(b => b.classList.remove('active'));
+                ui.mainContent.classList.add('opacity-50', 'pointer-events-none');
+                ui.headerTitle.textContent = 'Meal Plan'; // Reset header title
+                ui.planView.weekViewToggleBtn.innerHTML = '<i class="fas fa-calendar-week text-xl"></i>'; // Reset icon
+                ui.planView.loginBtn.classList.remove('hidden');
+                ui.planView.signupBtn.classList.remove('hidden');
+                ui.planView.logoutBtn.classList.add('hidden');
+                ui.mainContent.classList.add('opacity-50', 'pointer-events-none');
+                ui.planView.userStatus.textContent = 'Please Login'; // Default to "Please Login"
+                ui.headerTitle.textContent = 'Login'; // Set header title to Login on app load/logout
+                document.getElementById('main-nav').classList.add('hidden'); // Hide navigation by default
+
                 if (user) {
-                    ui.planView.userStatus.textContent = user.isAnonymous ? 'Guest User' : user.email;
-                    ui.planView.loginBtn.classList.toggle('hidden', !user.isAnonymous);
-                    ui.planView.signupBtn.classList.toggle('hidden', !user.isAnonymous);
+                    ui.planView.userStatus.textContent = user.email;
+                    ui.planView.loginBtn.classList.add('hidden');
+                    ui.planView.signupBtn.classList.add('hidden');
                     ui.planView.logoutBtn.classList.remove('hidden');
-                    ui.mainContent.classList.remove('opacity-50', 'pointer-events-none');
+                    ui.mainContent.classList.remove('opacity-50', 'pointer-events-none'); // Enable interaction
+                    ui.modals.auth.classList.add('hidden'); // Ensure auth modal is hidden after successful login
+                    ui.modals.auth.classList.remove('flex'); // Ensure auth modal is hidden after successful login
+                    ui.views[0].classList.add('active'); // Show plan view after login
+                    ui.navButtons[0].classList.add('active'); // Activate Plan button
+                    ui.headerTitle.textContent = 'Meal Plan'; // Reset header to Meal Plan
+                    document.getElementById('main-nav').classList.remove('hidden'); // Show navigation
                 } else {
-                    ui.planView.userStatus.textContent = 'Please Login';
-                    ui.planView.loginBtn.classList.remove('hidden');
-                    ui.planView.signupBtn.classList.remove('hidden');
-                    ui.planView.logoutBtn.classList.add('hidden');
-                    ui.mainContent.classList.add('opacity-50', 'pointer-events-none');
+                    // User is null (logged out), ensure auth modal is visible and main content is hidden
+                    openModal(ui.modals.auth);
+                    ui.mainContent.classList.add('opacity-50', 'pointer-events-none'); // Disable interaction
+                    document.getElementById('main-nav').classList.add('hidden'); // Hide navigation
                 }
             };
 
@@ -1252,6 +1284,9 @@
 
             const handleLogout = async () => {
                 try { await signOut(auth); showMessage('Logged out.'); } catch (e) { console.error("Logout error:", e); }
+                // After logout, explicitly re-render UI for logged out state
+                clearAllData(); // Clear all current UI data
+                updateAuthUI(null); // Force UI update to show login screen and hide app content
             };
 			
             const clearAllData = () => {
@@ -1264,6 +1299,7 @@
                 if (document.getElementById('plan-view').classList.contains('active')) {
                     updateMealCards({});
                 }
+                renderShoppingList({ missingBasic: [], presoakReminders: [] }); // Also clear shopping list
             };
 
             // --- App Initialization ---
@@ -1275,17 +1311,15 @@
                     
                     onAuthStateChanged(auth, async (user) => {
                         console.log(`%c[AUTH] Auth state changed. User:`, LOG_STYLE, user?.uid);
-                        clearAllData();
                         if (user) {
                             currentUserId = user.uid;
                             updateAuthUI(user);
                             await fetchAllDishes();
                             subscribeToInventory();
                             renderDayView(new Date()); 
-                        } else {
-                            currentUserId = null;
-                            updateAuthUI(null);
-                            await signInAnonymously(auth);
+                        } else { // User is logged out
+                             currentUserId = null;
+                             updateAuthUI(null); // Show login screen
                         }
                     });
                     setupEventListeners();
@@ -1299,4 +1333,3 @@
     </script>
 </body>
 </html>
-
