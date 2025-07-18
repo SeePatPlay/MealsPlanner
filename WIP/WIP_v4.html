@@ -1233,7 +1233,7 @@
                 
                 closeModal(ui.modals.message); // Close loading message
                 renderShoppingList(shoppingListData);
-                switchView('shopping-view', 'Shopping List');
+                //switchView('shopping-view', 'Shopping List');
                 if (presoakReminders.length > 0) openModal(ui.modals.calendarReminder);
             };
 
@@ -1367,6 +1367,13 @@
                 ui.headerTitle.textContent = title;
                 if (viewId === 'dishes-view') renderDishes();
                 else if (viewId === 'fridge-view') renderFridge();
+                else if (viewId === 'shopping-view') {
+                    //generateShoppingList(); // Re-generate shopping list when view is activated
+                    // This view is now responsible for displaying, but not regenerating unless button is clicked
+                    // Initial renderShoppingList will happen if data exists, otherwise it will show empty message.
+                    // User must click 'Generate Shopping List' button to re-generate.
+
+                }
             };
 
             const togglePlanView = () => {
