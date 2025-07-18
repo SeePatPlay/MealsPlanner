@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meals Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; overscroll-behavior-x: none; }
+        .view { display: none; }
+        .view.active { display: block; }
+        .nav-btn.active { color: #4f46e5; border-top-width: 2px; border-color: #4f46e5; }
+        .modal-backdrop { background-color: rgba(0,0,0,0.5); }
+        .form-multiselect { height: 120px; }
+        .hidden { display: none; }
+        .shopping-item input[type="checkbox"]:checked + label span:first-child { text-decoration: line-through; color: #9ca3af; }
+        .week-table th, .week-table td { border: 1px solid #e5e7eb; padding: 8px; text-align: center; }
+        .week-table th { background-color: #f3f4f6; font-weight: 600; }
+        .week-table td.meal-cell { min-width: 100px; vertical-align: top; cursor: pointer; }
+        .week-table td.meal-cell:hover { background-color: #eff6ff; }
+        .week-table .meal-type-header { background-color: #e0e7ff; font-weight: 600; }
+        .quota-input { width: 60px; text-align: center; }
+        .toggle-checkbox:checked { right: 0; border-color: #4f46e5; transform: translateX(100%); background-color: white; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #4f46e5; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased">
+
+    <div id="app" class="max-w-lg mx-auto pb-24">
+        
+        <header class="bg-white shadow-sm sticky top-0 z-20 p-4 flex justify-between items-center">
+             <div class="w-1/3 flex items-center space-x-2">
+                 <button id="week-view-toggle-btn" class="text-indigo-600 hover:text-indigo-800 p-2" title="Toggle Day/Week View"><i class="fas fa-calendar-week text-xl"></i></button>
+                 <button id="clear-plan-btn" class="text-indigo-600 hover:text-indigo-800 p-2" title="Clear Meal Plan"><i class="fas fa-eraser text-xl"></i></button>
+                 <button id="copy-week-btn" class="text-indigo-600 hover:text-indigo-800 p-2" title="Copy Week's Menu"><i class="fas fa-copy text-xl"></i></button>
+
+             </div>
+            <h1 id="header-title" class="text-2xl font-bold text-center text-gray-900 w-1/3">Meal Plan</h1>
+            <div class="w-1/3 text-right space-x-2">
+                 <button id="health-goals-btn" class="text-indigo-600 hover:text-indigo-800" title="Set Weekly Health Goals"><i class="fa-solid fa-bullseye text-xl"></i></button>
+                 <button id="auto-populate-btn" class="text-indigo-600 hover:text-indigo-800" title="Auto-Populate Weekly Plan"><i class="fas fa-magic-wand-sparkles text-xl"></i></button>
+                 <button id="generate-shopping-list-btn" class="text-indigo-600 hover:text-indigo-800" title="Generate Shopping List"><i class="fas fa-file-invoice text-xl"></i></button>
+            </div>
+        </header>
+
+        <main id="main-content" class="p-4 opacity-50 pointer-events-none">
+            <div id="plan-view" class="view hidden">
+                <div class="flex items-center justify-between mb-2 text-sm text-gray-600"><span id="user-status">Please Login</span><div><button id="login-btn" class="text-indigo-600 hover:underline text-sm">Login</button><button id="signup-btn" class="text-indigo-600 hover:underline text-sm ml-2">Sign Up</button><button id="logout-btn" class="text-red-500 hover:underline text-sm ml-2 hidden">Logout</button></div></div>
+                <div id="day-view-container" class="active"><div class="flex items-center justify-between mb-6"><button id="prev-day-btn" class="p-2 rounded-full hover:bg-gray-200" title="Previous Day"><i class="fas fa-chevron-left text-gray-600"></i></button><h2 id="current-date-header" class="text-xl font-semibold text-center"></h2><button id="next-day-btn" class="p-2 rounded-full hover:bg-gray-200" title="Next Day"><i class="fas fa-chevron-right text-gray-600"></i></button></div><div id="meal-cards-container" class="space-y-4"><div id="breakfast-meal-card" data-meal="breakfast" class="meal-card bg-white p-5 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow"><h3 class="text-lg font-bold text-indigo-600 mb-3">Breakfast</h3><div id="breakfast-card-content" class="space-y-1 text-gray-700 min-h-[2rem]"></div></div><div id="lunch-meal-card" data-meal="lunch" class="meal-card bg-white p-5 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow"><h3 class="text-lg font-bold text-green-600 mb-3">Lunch</h3><div id="lunch-card-content" class="space-y-1 text-gray-700 min-h-[2rem]"></div></div><div id="dinner-meal-card" data-meal="dinner" class="meal-card bg-white p-5 rounded-xl shadow-md cursor-pointer hover:shadow-lg transition-shadow"><h3 class="text-lg font-bold text-red-600 mb-3">Dinner</h3><div id="dinner-card-content" class="space-y-1 text-gray-700 min-h-[2rem]"></div></div></div></div>
+                <div id="week-view-container" class="hidden overflow-x-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <button id="prev-week-btn" class="p-2 rounded-full hover:bg-gray-200" title="Previous Week"><i class="fas fa-chevron-left text-gray-600"></i></button>
+                        <h2 id="current-week-header" class="text-xl font-semibold text-center"></h2>
+                        <button id="next-week-btn" class="p-2 rounded-full hover:bg-gray-200" title="Next Week"><i class="fas fa-chevron-right text-gray-600"></i></button>
+                    </div>
+                    <table class="week-table w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="w-20"></th>
+                                <th class="w-1/7">Mon</th>
+                                <th class="w-1/7">Tue</th>
+                                <th class="w-1/7">Wed</th>
+                                <th class="w-1/7">Thu</th>
+                                <th class="w-1/7">Fri</th>
+                                <th class="w-1/7">Sat</th>
+                                <th class="w-1/7">Sun</th>
+                            </tr>
+                        </thead>
+                        <tbody id="week-plan-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="dishes-view" class="view hidden"><div class="flex justify-between items-center mb-4"><div class="flex space-x-2"><button class="filter-btn active flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg" data-filter="all">All</button><button class="filter-btn flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg border" data-filter="main">Main</button><button class="filter-btn flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg border" data-filter="gravy">Gravy</button><button class="filter-btn flex-1 bg-white text-gray-700 px-4 py-2 rounded-lg border" data-filter="side">Side</button></div><button id="migrate-btn" class="text-sm text-indigo-600 hover:underline" title="Import dishes from TSV data">Migrate Data</button></div><div id="dishes-list" class="space-y-3"></div><button id="add-dish-btn" class="fixed bottom-24 right-4 bg-indigo-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-20" title="Add New Dish"><i class="fas fa-plus text-2xl"></i></button></div>
+            <div id="shopping-view" class="view hidden"><h2 class="text-xl font-bold text-gray-900 mb-4">Shopping List</h2><div id="shopping-list-container" class="space-y-4"></div></div>
+            <div id="fridge-view" class="view hidden"><div id="fridge-list" class="space-y-2"></div></div>
+        </main>
+
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around max-w-lg mx-auto z-10 hidden" id="main-nav"><a href="#" class="nav-btn active flex-1 text-center py-3" data-view="plan-view" data-title="Meal Plan"><i class="fas fa-calendar-day text-xl"></i><span class="block text-xs font-medium">Plan</span></a><a href="#" class="nav-btn flex-1 text-center py-3 text-gray-500 hover:text-indigo-600" data-view="dishes-view" data-title="My Dishes"><i class="fas fa-utensils text-xl"></i><span class="block text-xs font-medium">Dishes</span></a><a href="#" class="nav-btn flex-1 text-center py-3 text-gray-500 hover:text-indigo-600" data-view="shopping-view" data-title="Shopping List"><i class="fas fa-list-check text-xl"></i><span class="block text-xs font-medium">Shopping</span></a><a href="#" class="nav-btn flex-1 text-center py-3 text-gray-500 hover:text-indigo-600" data-view="fridge-view" data-title="Fridge Inventory"><i class="fas fa-carrot text-xl"></i><span class="block text-xs font-medium">Fridge</span></a></nav>
+    </div>
+
+    <div id="edit-meal-modal" class="fixed inset-0 z-30 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-full max-w-md"><div class="p-6"><h2 id="modal-title" class="text-2xl font-bold mb-4">Edit Meal</h2><div class="space-y-4"><div><label for="main-select" class="block text-sm font-medium text-gray-700">Main</label><select id="main-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select></div><div><label for="gravy-select" class="block text-sm font-medium text-gray-700">Gravy</label><select id="gravy-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select></div><div><label for="side-select" class="block text-sm font-medium text-gray-700">Side</label><select id="side-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select></div></div></div><div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3"><button id="cancel-meal-btn" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button id="save-meal-btn" type="button" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">Save</button></div></div></div>
+    <div id="dish-form-modal" class="fixed inset-0 z-30 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-full overflow-y-auto"><form id="dish-form" class="p-6"><h2 id="dish-form-title" class="text-2xl font-bold mb-4">Add New Dish</h2><div class="space-y-4"><div><label for="dish-name" class="block text-sm font-medium text-gray-700">Dish Name</label><input type="text" id="dish-name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></div><div><label for="dish-type" class="block text-sm font-medium text-gray-700">Type</label><select id="dish-type" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"><option>Main</option><option>Gravy</option><option>Side</option></select></div><div><label class="block text-sm font-medium text-gray-700">Intended Meal(s)</label><div class="mt-2 space-x-4"><label class="inline-flex items-center"><input type="checkbox" id="is-breakfast" class="rounded border-gray-300 text-indigo-600 shadow-sm"> <span class="ml-2">Breakfast</span></label><label class="inline-flex items-center"><input type="checkbox" id="is-lunch" class="rounded border-gray-300 text-indigo-600 shadow-sm"> <span class="ml-2">Lunch</span></label><label class="inline-flex items-center"><input type="checkbox" id="is-dinner" class="rounded border-gray-300 text-indigo-600 shadow-sm"> <span class="ml-2">Dinner</span></label></div></div><div id="associations-main-group" class="hidden"><label for="associated-mains" class="block text-sm font-medium text-gray-700">Associated Mains</label><select id="associated-mains" multiple class="form-multiselect mt-1 block w-full"></select></div><div id="associations-gravy-group" class="hidden"><label for="associated-gravies" class="block text-sm font-medium text-gray-700">Associated Gravies</label><select id="associated-gravies" multiple class="form-multiselect mt-1 block w-full"></select></div><div id="associations-side-group" class="hidden"><label for="associated-sides" class="block text-sm font-medium text-gray-700">Associated Sides</label><select id="associated-sides" multiple class="form-multiselect mt-1 block w-full"></select></div><div><label for="basic-ingredients" class="block text-sm font-medium text-gray-700">Basic Ingredients (comma-separated)</label><textarea id="basic-ingredients" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></textarea></div><div><label for="presoak-ingredients" class="block text-sm font-medium text-gray-700">Presoak Ingredients (comma-separated)</label><textarea id="presoak-ingredients" rows="2" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></textarea></div><div class="flex items-center"><input id="remind-presoak" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="remind-presoak" class="ml-2 block text-sm text-gray-900">Always remind for presoak?</label></div><div><label class="block text-sm font-medium text-gray-700">Health Scores (1-5)</label><div class="grid grid-cols-4 gap-2 mt-1"><input type="number" id="carb-score" placeholder="Carb" min="1" max="5" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"><input type="number" id="protein-score" placeholder="Protein" min="1" max="5" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"><input type="number" id="fat-score" placeholder="Fat" min="1" max="5" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"><input type="number" id="fiber-score" placeholder="Fiber" min="1" max="5" class="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></div></div></div></form><div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3"><button id="cancel-dish-btn" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button id="save-dish-btn" type="button" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">Save Dish</button></div></div></div>
+    <div id="migration-modal" class="fixed inset-0 z-30 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg"><div class="p-6"><h2 class="text-2xl font-bold mb-4">Migrate Data from TSV</h2><p class="text-sm text-gray-600 mb-4">Paste your TSV data below. The data should include the headers from your file.</p><p class="text-xs text-gray-500 mb-4">Expected headers: Food, Type, Cuisine, Breakfast, Lunch, Dinner, Associated Gravy Names (CSV), etc.</p><textarea id="csv-data-input" class="w-full h-48 border border-gray-300 rounded-md p-2" placeholder="Paste TSV data here..."></textarea><div class="mt-4 flex items-start"><div class="flex items-center h-5"><input id="clear-existing-data" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"></div><div class="ml-3 text-sm"><label for="clear-existing-data" class="font-medium text-red-600">Clear all existing dishes before importing</label><p class="text-gray-500">Warning: This cannot be undone.</p></div></div></div><div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3"><button id="cancel-migration-btn" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button id="import-data-btn" type="button" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">Import</button></div></div></div>
+    <div id="health-goals-modal" class="fixed inset-0 z-30 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg"><div class="p-6"><h2 class="text-2xl font-bold mb-4">Set Weekly Health Goals</h2><p class="text-sm text-gray-600 mb-4">Set your target nutritional values per dish for each meal type.</p><div class="space-y-4"><div><h3 class="font-semibold text-lg mb-2">Breakfast</h3><div class="grid grid-cols-4 gap-2"><input type="number" id="bf-carb" placeholder="Carb" min="0" class="w-full border border-gray-300 rounded-md p-2 text-center"><input type="number" id="bf-protein" placeholder="Protein" min="0" class="w-full border border-gray-300 rounded-md p-2 text-center"><input type="number" id="bf-fat" placeholder="Fat" min="0" class="w-full border border-gray-300 rounded-md p-2 text-center"><input type="number" id="bf-fiber" placeholder="Fiber" min="0" class="w-full border border-gray-300 rounded-md p-2 text-center"></div></div><div><h3 class="font-semibold text-lg mb-2">Lunch</h3><div class="grid grid-cols-4 gap-2"><input type="number" id="lunch-carb" placeholder="Carb" min="0" class="w-full border border-gray-300 rounded-md p-2 text-center"><input type="number" id="lunch-protein" placeholder="Protein" min="0" class="w-full border border-gray-300 rounded-md p-2 text-center"><input type="number" id="lunch-fat" placeholder="Fat" min="0" class="w-full border border-gray-300 rounded-md p-2 text-center"><input type="number" id="lunch-fiber" placeholder="Fiber" min="0" class="w-full border border-gray-300 rounded-md p-2 text-center"></div></div><div><h3 class="font-semibold text-lg mb-2">Dinner</h3><div class="grid grid-cols-4 gap-2"><input type="number" id="dinner-carb" placeholder="Carb" min="0" class="w-full border border-gray-300 rounded-md p-2 text-center"><input type="number" id="dinner-protein" placeholder="Protein" min="0" class="w-full border border-gray-300 rounded-md p-2 text-center"><input type="number" id="dinner-fat" placeholder="Fat" min="0" class="w-full border border-gray-300 rounded-md p-2 text-center"><input type="number" id="dinner-fiber" placeholder="Fiber" min="0" class="w-full border border-gray-300 rounded-md p-2 text-center"></div></div></div></div><div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3"><button id="cancel-health-goals-btn" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button id="save-health-goals-btn" type="button" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">Save Goals</button></div></div></div>
+    <div id="auto-populate-modal" class="fixed inset-0 z-30 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-full overflow-y-auto"><form id="auto-populate-form" class="p-6"><h2 class="text-2xl font-bold mb-4">Auto-Populate Week</h2><p class="text-sm text-gray-600 mb-4">Set target frequencies for main dishes and exclude dishes from this week's plan.</p><div class="mb-4"><h3 class="font-semibold text-lg mb-2">Main Dish Quotas</h3><div id="main-dish-quotas" class="space-y-2 max-h-48 overflow-y-auto border p-2 rounded-md bg-gray-50"></div></div><div class="mb-4"><h3 class="font-semibold text-lg mb-2">Exclude Dishes</h3><div id="exclude-dishes-list" class="space-y-2 max-h-48 overflow-y-auto border p-2 rounded-md bg-gray-50"></div></div></form><div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3"><button id="cancel-auto-populate-btn" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button id="run-auto-populate-btn" type="button" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">Auto-Populate</button></div></div></div>
+    <div id="health-report-modal" class="fixed inset-0 z-30 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-full overflow-y-auto"><div class="p-6"><h2 class="text-2xl font-bold mb-4">Auto-Population Report</h2><div class="space-y-4"><div id="health-summary"><h3 class="font-semibold text-lg mb-2">Health Goal Adherence (Avg. per Dish)</h3><div id="health-summary-content" class="space-y-4"></div></div><div id="quota-summary"><h3 class="font-semibold text-lg mb-2">Main Dish Quota Adherence</h3><ul class="list-disc list-inside space-y-1"></ul><p id="quota-status" class="mt-2 font-bold"></p></div></div></div><div class="bg-gray-50 px-6 py-3 flex justify-end"><button id="close-health-report-btn" type="button" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">Close</button></div></div></div>
+    <div id="clear-plan-modal" class="fixed inset-0 z-30 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center"><h2 class="text-xl font-bold mb-4">Clear Meal Plan</h2><p class="text-gray-700 mb-6">What would you like to clear?</p><div class="flex flex-col space-y-3"><button id="clear-current-day-btn" class="bg-red-500 text-white py-2 px-4 rounded-md shadow-sm hover:bg-red-600">Clear Current Day</button><button id="clear-current-week-btn" class="bg-red-500 text-white py-2 px-4 rounded-md shadow-sm hover:bg-red-600">Clear Entire Week</button><button id="cancel-clear-plan-btn" type="button" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-md shadow-sm hover:bg-gray-400">Cancel</button></div></div></div>
+    <div id="calendar-reminder-modal" class="fixed inset-0 z-40 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-xs text-center"><p class="text-lg font-semibold text-gray-800 mb-4">Create Google Calendar events for presoak reminders?</p><div class="flex justify-center space-x-4"><button id="confirm-calendar-yes" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">Yes</button><button id="confirm-calendar-no" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-md shadow-sm hover:bg-gray-400">No</button></div></div></div>
+    <div id="message-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-xs text-center"><p id="message-content" class="text-lg font-semibold text-gray-800 mb-4"></p><button id="message-close-btn" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">OK</button></div></div>
+
+    <div id="auth-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-full max-w-md"><div class="p-6"><h2 id="auth-title" class="text-2xl font-bold mb-4 text-center">Login</h2><form id="auth-form" class="space-y-4"><div><label for="auth-email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="auth-email" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></div><div><label for="auth-password" class="block text-sm font-medium text-gray-700">Password</label><input type="password" id="auth-password" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></div><button type="submit" id="auth-submit-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm font-medium hover:bg-indigo-700">Login</button></form><div class="flex justify-between items-center text-sm mt-4"><button id="forgot-password-btn" class="text-indigo-600 hover:underline">Forgot Password?</button><button id="toggle-auth-mode" class="text-indigo-600 hover:underline">Need an account? Sign Up</button></div></div></div></div>
+    <div id="copy-week-modal" class="fixed inset-0 z-30 hidden items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold mb-4">Copy Week's Menu</h2>
+                <p class="text-sm text-gray-600 mb-4">Copy the current week's meal plan to another week.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label for="copy-target-date" class="block text-sm font-medium text-gray-700">Target Week Start Date (Monday)</label>
+                        <input type="date" id="copy-target-date" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3">
+                <button id="cancel-copy-btn" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button id="confirm-copy-btn" type="button" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">Copy Week</button>
+            </div>
+        </div>
+    </div>
+    <div id="forgot-password-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop"><div class="bg-white rounded-lg shadow-xl w-full max-w-md"><form id="forgot-password-form" class="p-6"><h2 class="text-2xl font-bold mb-4">Reset Password</h2><p class="text-sm text-gray-600 mb-4">Enter your email address and we will send you a link to reset your password.</p><div class="space-y-4"><div><label for="reset-email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="reset-email" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></div></div><div class="bg-gray-50 px-6 py-3 -mx-6 -mb-6 mt-6 flex justify-end space-x-3"><button id="cancel-reset-btn" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button><button id="send-reset-link-btn" type="submit" class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700">Send Reset Link</button></div></form></div></div>
+
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, collection, query, getDoc, getDocs, setDoc, addDoc, writeBatch, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- App Constants ---
+            const LOG_STYLE = 'color: #6e44ff; font-weight: bold;';
+            console.log(`%c[APP] DOM fully loaded. Initializing Meal Planner...`, LOG_STYLE);
+            
+            // Firebase Config
+            const appId = 'meal-planner-v4';
+            const firebaseConfig = {
+                apiKey: "AIzaSyBqsmeMmibLL0TSFjfifza9W059F9yl9Fo",
+                authDomain: "meals-planner-b547d.firebaseapp.com",
+                projectId: "meals-planner-b547d",
+                storageBucket: "meals-planner-b547d.firebasestorage.app",
+                messagingSenderId: "390403627495",
+                appId: "1:390403627495:web:f3bc856694a2243a074542",
+                measurementId: "G-6XLHKR42RY"
+            };
+
+            // UI Element Constants (Organized into a single object)
+            const ui = {
+                headerTitle: document.getElementById('header-title'),
+                navButtons: document.querySelectorAll('.nav-btn'),
+                views: document.querySelectorAll('.view'),
+                mainContent: document.getElementById('main-content'),
+                planView: {
+                    userStatus: document.getElementById('user-status'),
+                    loginBtn: document.getElementById('login-btn'),
+                    signupBtn: document.getElementById('signup-btn'),
+                    logoutBtn: document.getElementById('logout-btn'),
+                    dayViewContainer: document.getElementById('day-view-container'),
+                    weekViewContainer: document.getElementById('week-view-container'),
+                    currentDateHeader: document.getElementById('current-date-header'),
+                    prevDayBtn: document.getElementById('prev-day-btn'),
+                    nextDayBtn: document.getElementById('next-day-btn'),
+                    mealCards: document.querySelectorAll('.meal-card'),
+                    weekPlanTableBody: document.getElementById('week-plan-table-body'),
+                    weekViewToggleBtn: document.getElementById('week-view-toggle-btn'),
+                    clearPlanBtn: document.getElementById('clear-plan-btn'),
+                    healthGoalsBtn: document.getElementById('health-goals-btn'),
+                    autoPopulateBtn: document.getElementById('auto-populate-btn'),
+                    generateShoppingListBtn: document.getElementById('generate-shopping-list-btn'),
+                    currentWeekHeader: document.getElementById('current-week-header'), // New
+                    prevWeekBtn: document.getElementById('prev-week-btn'), // New
+                    nextWeekBtn: document.getElementById('next-week-btn'), // New
+					copyWeekBtn: document.getElementById('copy-week-btn'),
+                },
+                dishesView: {
+                    dishesList: document.getElementById('dishes-list'),
+                    filterBtns: document.querySelectorAll('.filter-btn'),
+                    migrateBtn: document.getElementById('migrate-btn'),
+                    addDishBtn: document.getElementById('add-dish-btn'),
+                },
+                shoppingView: {
+                    container: document.getElementById('shopping-list-container'),
+                },
+                fridgeView: {
+                    list: document.getElementById('fridge-list'),
+                },
+                modals: {
+                    editMeal: document.getElementById('edit-meal-modal'),
+                    dishForm: document.getElementById('dish-form-modal'),
+                    migration: document.getElementById('migration-modal'),
+                    healthGoals: document.getElementById('health-goals-modal'),
+                    autoPopulate: document.getElementById('auto-populate-modal'),
+                    healthReport: document.getElementById('health-report-modal'),
+                    clearPlan: document.getElementById('clear-plan-modal'),
+                    calendarReminder: document.getElementById('calendar-reminder-modal'),
+                    copyWeek: document.getElementById('copy-week-modal'),
+                    message: document.getElementById('message-modal'),
+                    auth: document.getElementById('auth-modal'),
+                    forgotPassword: document.getElementById('forgot-password-modal'),
+                },
+                editMealFields: {
+                    title: document.getElementById('modal-title'),
+                    mainSelect: document.getElementById('main-select'),
+                    gravySelect: document.getElementById('gravy-select'),
+                    sideSelect: document.getElementById('side-select'),
+                    cancelBtn: document.getElementById('cancel-meal-btn'),
+                    saveBtn: document.getElementById('save-meal-btn'),
+                },
+                dishFormFields: {
+                    form: document.getElementById('dish-form'),
+                    title: document.getElementById('dish-form-title'),
+                    name: document.getElementById('dish-name'),
+                    type: document.getElementById('dish-type'),
+                    isBreakfast: document.getElementById('is-breakfast'),
+                    isLunch: document.getElementById('is-lunch'),
+                    isDinner: document.getElementById('is-dinner'),
+                    assocMainGroup: document.getElementById('associations-main-group'),
+                    assocGravyGroup: document.getElementById('associations-gravy-group'),
+                    assocSideGroup: document.getElementById('associations-side-group'),
+                    assocMains: document.getElementById('associated-mains'),
+                    assocGravies: document.getElementById('associated-gravies'),
+                    assocSides: document.getElementById('associated-sides'),
+                    ingredients: document.getElementById('basic-ingredients'),
+                    presoak: document.getElementById('presoak-ingredients'),
+                    remindPresoak: document.getElementById('remind-presoak'),
+                    carbScore: document.getElementById('carb-score'),
+                    proteinScore: document.getElementById('protein-score'),
+                    fatScore: document.getElementById('fat-score'),
+                    fiberScore: document.getElementById('fiber-score'),
+                    cancelBtn: document.getElementById('cancel-dish-btn'),
+                    saveBtn: document.getElementById('save-dish-btn'),
+                },
+                migrationFields: {
+                    csvInput: document.getElementById('csv-data-input'),
+                    clearCheckbox: document.getElementById('clear-existing-data'),
+                    importBtn: document.getElementById('import-data-btn'),
+                    cancelBtn: document.getElementById('cancel-migration-btn'),
+                },
+                healthGoalsFields: {
+                    bfCarb: document.getElementById('bf-carb'),
+                    bfProtein: document.getElementById('bf-protein'),
+                    bfFat: document.getElementById('bf-fat'),
+                    bfFiber: document.getElementById('bf-fiber'),
+                    lunchCarb: document.getElementById('lunch-carb'),
+                    lunchProtein: document.getElementById('lunch-protein'),
+                    lunchFat: document.getElementById('lunch-fat'),
+                    lunchFiber: document.getElementById('lunch-fiber'),
+                    dinnerCarb: document.getElementById('dinner-carb'),
+                    dinnerProtein: document.getElementById('dinner-protein'),
+                    dinnerFat: document.getElementById('dinner-fat'),
+                    dinnerFiber: document.getElementById('dinner-fiber'),
+                    cancelBtn: document.getElementById('cancel-health-goals-btn'),
+                    saveBtn: document.getElementById('save-health-goals-btn'),
+                },
+                autoPopulateFields: {
+                    quotasContainer: document.getElementById('main-dish-quotas'),
+                    excludeList: document.getElementById('exclude-dishes-list'),
+                    cancelBtn: document.getElementById('cancel-auto-populate-btn'),
+                    runBtn: document.getElementById('run-auto-populate-btn'),
+                },
+                healthReportFields: {
+                    summaryContent: document.getElementById('health-summary-content'),
+                    quotaList: document.querySelector('#quota-summary ul'),
+                    quotaStatus: document.getElementById('quota-status'),
+                    closeBtn: document.getElementById('close-health-report-btn'),
+                },
+                clearPlanFields: {
+                    clearDayBtn: document.getElementById('clear-current-day-btn'),
+                    clearWeekBtn: document.getElementById('clear-current-week-btn'),
+                    cancelBtn: document.getElementById('cancel-clear-plan-btn'),
+                },
+                calendarReminderFields: {
+                    yesBtn: document.getElementById('confirm-calendar-yes'),
+                    noBtn: document.getElementById('confirm-calendar-no'),
+                },
+                messageFields: {
+                    content: document.getElementById('message-content'),
+                    closeBtn: document.getElementById('message-close-btn'),
+                },
+                authFields: {
+                    title: document.getElementById('auth-title'),
+                    form: document.getElementById('auth-form'),
+                    email: document.getElementById('auth-email'),
+                    password: document.getElementById('auth-password'),
+                    submitBtn: document.getElementById('auth-submit-btn'),
+                    toggleModeBtn: document.getElementById('toggle-auth-mode'),
+                    forgotPasswordBtn: document.getElementById('forgot-password-btn'),
+                },
+                forgotPasswordFields: {
+                    form: document.getElementById('forgot-password-form'),
+                    email: document.getElementById('reset-email'),
+                    cancelBtn: document.getElementById('cancel-reset-btn'),
+                    sendLinkBtn: document.getElementById('send-reset-link-btn'),
+                },
+                copyWeekFields: {
+                    targetDateInput: document.getElementById('copy-target-date'),
+                    cancelBtn: document.getElementById('cancel-copy-btn'),
+                    confirmBtn: document.getElementById('confirm-copy-btn'),
+                }
+            };
+
+            // --- App State ---
+            let db, auth;
+            let currentUserId = null;
+            let currentDate = new Date();
+            let currentWeekMealPlans = {}; 
+            let currentEditingMeal = null;
+            let currentEditingDay = null;
+            let currentEditingDishId = null; 
+            let unsubscribeMealPlan;
+            let unsubscribeInventory;
+            let allDishes = [];
+            let inventory = [];
+            let weeklyHealthGoals = {}; 
+            let currentViewMode = 'day'; 
+            let authMode = 'login'; 
+
+            // --- Utility Functions ---
+            const formatDate = (date) => new Date(date).toISOString().split('T')[0];
+            const formatHeaderDate = (date) => date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            const capitalize = (str) => str.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            const pluralize = (word) => word.endsWith('y') ? word.slice(0, -1) + 'ies' : word + 's';
+            
+            // Helper to get start of week (Monday)
+            const getMondayOfWeek = (date) => {
+                const d = new Date(date);
+                const day = d.getDay(); // 0 for Sunday, 1 for Monday
+                // Adjust to Monday: if day is 0 (Sunday), go back 6 days. Otherwise, go back (day - 1) days.
+                const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
+                d.setDate(diff);
+                d.setHours(0, 0, 0, 0); // Normalize to start of day
+                return d;
+            };
+
+            const showMessage = (message) => {
+                console.log(`%c[UI] Message: ${message}`, LOG_STYLE);
+                ui.messageFields.content.textContent = message;
+                openModal(ui.modals.message);
+            };
+
+            const openCopyWeekModal = () => {
+                // Set default target date to next Monday
+                const today = new Date();
+                const nextMonday = getMondayOfWeek(today);
+                nextMonday.setDate(nextMonday.getDate() + 7); // Move to next week
+                ui.copyWeekFields.targetDateInput.value = formatDate(nextMonday);
+                openModal(ui.modals.copyWeek);
+            };
+
+            const executeCopyWeek = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) {
+                    showMessage("Please log in to copy meal plans.");
+                    return;
+                }
+
+                const targetDateString = ui.copyWeekFields.targetDateInput.value;
+                if (!targetDateString) {
+                    showMessage("Please select a target week start date.");
+                    return;
+                }
+
+                const targetWeekStart = new Date(targetDateString);
+                if (isNaN(targetWeekStart.getTime())) {
+                    showMessage("Invalid target date selected.");
+                    return;
+                }
+
+                showMessage('Copying week menu...');
+                ui.copyWeekFields.confirmBtn.disabled = true;
+
+                try {
+                    const sourceWeekStart = getMondayOfWeek(currentDate); // The currently viewed week's Monday
+                    await fetchWeekMealPlans(sourceWeekStart); // Ensure currentWeekMealPlans has the source data
+
+                    const batch = writeBatch(db);
+
+                    for (let i = 0; i < 7; i++) {
+                        const sourceDayDate = new Date(sourceWeekStart);
+                        sourceDayDate.setDate(sourceWeekStart.getDate() + i);
+                        const sourceDateString = formatDate(sourceDayDate);
+                        
+                        const targetDayDate = new Date(targetWeekStart);
+                        targetDayDate.setDate(targetWeekStart.getDate() + i);
+                        const targetDateStringFormatted = formatDate(targetDayDate);
+
+                        console.log(`%c[COPY_WEEK] Copying from ${sourceDateString} to ${targetDateStringFormatted}`, LOG_STYLE);
+                        console.log(`%c[COPY_WEEK] Source Plan for ${sourceDateString}:`, LOG_STYLE, currentWeekMealPlans[sourceDateString]);
+
+                        const sourcePlan = currentWeekMealPlans[sourceDateString] || {};
+                        batch.set(doc(db, 'artifacts', appId, 'users', userId, 'meal_plans', targetDateStringFormatted), sourcePlan, { merge: false }); // Overwrite target day's plan
+                    }
+                    await batch.commit();
+                    showMessage('Week menu copied successfully!');
+                    closeModal(ui.modals.copyWeek);
+
+                    // Re-render the current view to show the updated data (if it falls in the target week)
+                    // Or just update the view if staying in the current source week
+                    await fetchWeekMealPlans(currentDate); // Re-fetch current week data to ensure consistency
+                    if (currentViewMode === 'day') {
+                        renderDayView(currentDate);
+                    } else {
+                        renderWeekView();
+                    }
+
+                } catch (error) {
+                    showMessage(`Failed to copy week menu: ${error.message}`);
+                } finally {
+                    ui.copyWeekFields.confirmBtn.disabled = false;
+                }
+            };
+
+
+            const openModal = (modalElement) => {
+                if (!modalElement) { console.error("Attempted to open a null modal"); return; }
+                console.log(`%c[UI] Opening modal: ${modalElement.id}`, LOG_STYLE);
+                modalElement.classList.remove('hidden');
+                modalElement.classList.add('flex');
+            };
+            const closeModal = (modalElement) => {
+                if (!modalElement) { console.error("Attempted to close a null modal"); return; }
+                console.log(`%c[UI] Closing modal: ${modalElement.id}`, LOG_STYLE);
+                modalElement.classList.add('hidden');
+                modalElement.classList.remove('flex');
+            };
+
+            // --- Render Logic ---
+            const renderDayView = (date) => { 
+                console.log(`%c[RENDER] Rendering Day View for: ${formatDate(date)}`, LOG_STYLE);
+                currentDate = date;
+                ui.planView.currentDateHeader.textContent = formatHeaderDate(date);
+                if (unsubscribeMealPlan) unsubscribeMealPlan();
+                subscribeToMealPlan(date);
+            };
+
+            const updateMealCards = (planData) => {
+                console.log(`%c[RENDER] Updating Meal Cards`, LOG_STYLE, planData);
+                const plan = planData || {};
+                ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+                    const contentEl = document.getElementById(`${mealType}-card-content`);
+                    const meal = plan[mealType];
+                    if (meal && (meal.main || meal.gravy || meal.side)) {
+                        contentEl.innerHTML = `<p class="font-semibold">${meal.main || ''}</p><p>${meal.gravy || ''}</p><p>${meal.side || ''}</p>`.trim();
+                    } else {
+                        contentEl.innerHTML = `<p class="text-gray-400">Tap to add a meal</p>`;
+                    }
+                });
+            };
+            
+            const renderDishes = async (filter = 'all') => {
+                console.log(`%c[RENDER] Rendering Dishes with filter: ${filter}`, LOG_STYLE);
+                ui.dishesView.dishesList.innerHTML = '';
+                if (!allDishes.length) {
+                    ui.dishesView.dishesList.innerHTML = `<div class="text-center text-gray-500 py-8"><p>No dishes found. Click '+' to add one!</p></div>`;
+                    return;
+                }
+                const filteredDishes = allDishes
+                    .filter(dish => filter === 'all' || dish.type.toLowerCase() === filter)
+                    .sort((a, b) => a.name.localeCompare(b.name));
+
+                filteredDishes.forEach(dish => {
+                    const dishCard = document.createElement('div');
+                    dishCard.className = 'bg-white p-4 rounded-lg shadow-sm';
+                    dishCard.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold text-lg">${dish.name}</p>
+                                <p class="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded-full inline-block">${dish.type}</p>
+                            </div>
+                            <div class="space-x-2">
+                                <button class="edit-dish-btn text-gray-400 hover:text-indigo-600" data-id="${dish.id}" title="Edit Dish"><i class="fas fa-pencil-alt"></i></button>
+                                <button class="delete-dish-btn text-gray-400 hover:text-red-600" data-id="${dish.id}" title="Delete Dish"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>`;
+                    ui.dishesView.dishesList.appendChild(dishCard);
+                });
+            };
+
+            const renderFridge = () => {
+                console.log(`%c[RENDER] Rendering Fridge with ${inventory.length} items`, LOG_STYLE);
+                ui.fridgeView.list.innerHTML = '';
+                if (inventory.length === 0) {
+                    ui.fridgeView.list.innerHTML = `<div class="text-center text-gray-500 py-8"><p>Your fridge is empty.</p></div>`;
+                    return;
+                }
+                inventory.forEach(item => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'bg-white p-3 rounded-lg shadow-sm flex items-center justify-between';
+                    itemEl.innerHTML = `
+                        <span class="capitalize">${item.name}</span>
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="toggle-${item.id}" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" ${item.inStock ? 'checked' : ''} data-id="${item.id}"/>
+                            <label for="toggle-${item.id}" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                        </div>`;
+                    ui.fridgeView.list.appendChild(itemEl);
+                });
+            };
+
+            const renderWeekView = async () => {
+                console.log(`%c[RENDER] Rendering Week View`, LOG_STYLE);
+                ui.planView.weekPlanTableBody.innerHTML = '';
+                ui.planView.currentDateHeader.textContent = "Weekly Plan";
+                const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const mealTypes = ['breakfast', 'lunch', 'dinner'];
+                await fetchWeekMealPlans(currentDate); 
+                console.log(`%c[RENDER] Week View - currentDate for fetch: ${formatDate(currentDate)}`, LOG_STYLE);
+                console.log(`%c[RENDER] Week View - currentWeekMealPlans after fetch:`, LOG_STYLE, currentWeekMealPlans);
+                // Update the week header date range
+                const weekStart = getMondayOfWeek(currentDate);
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                ui.planView.currentWeekHeader.textContent = `${formatHeaderDate(weekStart)} - ${formatHeaderDate(weekEnd)}`;
+
+
+                let weekIsEmpty = true;
+
+                mealTypes.forEach(mealType => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td class="meal-type-header font-bold capitalize">${mealType}</td>`;
+                    daysOfWeek.forEach((dayName, dayIndex) => {
+                        const weekStart = new Date(currentDate);
+                        weekStart.setDate(currentDate.getDate() - (currentDate.getDay() || 7) + 1); // Monday as start
+                        const dayDate = new Date(weekStart);
+                        dayDate.setDate(weekStart.getDate() + dayIndex);
+                        const dateString = formatDate(dayDate);
+                        const meal = currentWeekMealPlans[dateString]?.[mealType] || {};
+                        if (meal && (meal.main || meal.gravy || meal.side)) {
+                            weekIsEmpty = false; // Found at least one meal
+                        }
+                        const cell = document.createElement('td');
+                        cell.className = 'meal-cell';
+                        cell.dataset.date = dateString;
+                        cell.dataset.meal = mealType;
+                        cell.innerHTML = `<p class="font-semibold">${meal?.main || ''}</p><p>${meal?.gravy || ''}</p><p>${meal?.side || ''}</p>`;
+                        row.appendChild(cell);
+                    });
+                    ui.planView.weekPlanTableBody.appendChild(row);
+                });
+                if (weekIsEmpty) {
+                    ui.planView.weekPlanTableBody.innerHTML += `<tr><td colspan="8" class="text-center text-gray-500 py-8">No meals planned for this week.</td></tr>`;
+                }
+				console.log('%c[UI] Week view table rendered.', LOG_STYLE);
+
+                // Add event listeners to week view cells
+                ui.planView.weekPlanTableBody.querySelectorAll('.meal-cell').forEach(cell => {
+                    cell.addEventListener('click', (e) => {
+                        const date = e.currentTarget.dataset.date;
+                        const mealType = e.currentTarget.dataset.meal;
+                        console.log(`%c[EVENT] Clicked week view cell: ${mealType} on ${date}`, LOG_STYLE);
+                        openEditModal(mealType, date);
+                    });
+                });
+            };
+            
+            const renderShoppingList = (shoppingListData) => {
+                console.log(`%c[RENDER] Rendering Shopping List`, LOG_STYLE, shoppingListData);
+                ui.shoppingView.container.presoakRemindersData = shoppingListData.presoakReminders; // Store for calendar
+                let fullHtml = '';
+                if (!shoppingListData || (shoppingListData.missingBasic.length === 0 && shoppingListData.presoakReminders.length === 0)) {
+                    fullHtml = `<div class="text-center text-gray-500 py-8"><p>No missing ingredients or presoak reminders for this week.</p><p class="text-sm">Click 'Generate Shopping List' to create one.</p></div>`;
+                } else {
+                    if (shoppingListData.missingBasic.length > 0) {
+                        fullHtml += `<h3 class="text-lg font-semibold mb-2">Missing Basic Ingredients</h3><ul class="space-y-1">` +
+                                    shoppingListData.missingBasic.sort((a,b) => a.ingredient.localeCompare(b.ingredient)).map(item => `
+                                        <li class="bg-white p-3 rounded-lg shadow-sm flex items-center shopping-item">
+                                            <input type="checkbox" id="missing-${item.ingredient.replace(/\s/g, '-')}" class="form-checkbox h-4 w-4 text-indigo-600 rounded">
+                                            <label for="missing-${item.ingredient.replace(/\s/g, '-')}" class="ml-2 text-gray-700">
+                                                <span>${item.ingredient}</span>
+                                                <span class="text-sm text-gray-500 ml-2">(${item.dish}, ${item.meal} on ${item.day})</span>
+                                            </label>
+                                        </li>`).join('') + `</ul>`;
+                    }
+                    if (shoppingListData.presoakReminders.length > 0) {
+                        fullHtml += `<h3 class="text-lg font-semibold mb-2 mt-6">Presoak Reminders</h3><ul class="space-y-1">` +
+                                    shoppingListData.presoakReminders.sort((a,b) => a.day.localeCompare(b.day)).map(item => `
+                                        <li class="bg-white p-3 rounded-lg shadow-sm flex items-center shopping-item">
+                                            <input type="checkbox" id="presoak-${item.ingredient.replace(/\s/g, '-')}" class="form-checkbox h-4 w-4 text-indigo-600 rounded">
+                                            <label for="presoak-${item.ingredient.replace(/\s/g, '-')}" class="ml-2 text-gray-700">
+                                                <span>${item.ingredient}</span>
+                                                <span class="text-sm text-gray-500 ml-2">(for ${item.dish}, ${item.meal} on ${item.day})</span>
+                                            </label>
+                                        </li>`).join('') + `</ul>`;
+                    }
+                }
+                ui.shoppingView.container.innerHTML = fullHtml;
+            };
+
+            // --- Modal Control Logic ---
+            const openEditModal = (mealType, dateString = null) => {
+                console.log(`%c[MODAL] Opening Edit Meal Modal for: ${mealType} on ${dateString || formatDate(currentDate)}`, LOG_STYLE);
+                currentEditingMeal = mealType;
+                currentEditingDay = dateString || formatDate(currentDate); 
+                ui.editMealFields.title.textContent = `Edit ${capitalize(mealType)}`;
+                const mealData = currentWeekMealPlans[currentEditingDay]?.[mealType] || {};
+                
+                populateSelect(ui.editMealFields.mainSelect, 'main', mealType, mealData.main);
+                ui.editMealFields.mainSelect.dispatchEvent(new Event('change')); 
+                
+                setTimeout(() => {
+                    ui.editMealFields.gravySelect.value = mealData.gravy || "";
+                    ui.editMealFields.gravySelect.dispatchEvent(new Event('change')); 
+                    setTimeout(() => { ui.editMealFields.sideSelect.value = mealData.side || ""; }, 0);
+                }, 0);
+                openModal(ui.modals.editMeal);
+            };
+
+            const openDishFormForEdit = (dish) => {
+                console.log(`%c[MODAL] Opening Dish Form to edit:`, LOG_STYLE, dish);
+                ui.dishFormFields.form.reset();
+                currentEditingDishId = dish.id;
+                ui.dishFormFields.title.textContent = 'Edit Dish';
+                ui.dishFormFields.name.value = dish.name;
+                ui.dishFormFields.type.value = dish.type;
+                ui.dishFormFields.isBreakfast.checked = dish.intendedFor.breakfast;
+                ui.dishFormFields.isLunch.checked = dish.intendedFor.lunch;
+                ui.dishFormFields.isDinner.checked = dish.intendedFor.dinner;
+                ui.dishFormFields.ingredients.value = dish.ingredients.join(', ');
+                ui.dishFormFields.presoak.value = dish.presoak.join(', ');
+                ui.dishFormFields.remindPresoak.checked = dish.remindPresoak;
+                if (dish.healthScore) {
+                    ui.dishFormFields.carbScore.value = dish.healthScore.carb;
+                    ui.dishFormFields.proteinScore.value = dish.healthScore.protein;
+                    ui.dishFormFields.fatScore.value = dish.healthScore.fat;
+                    ui.dishFormFields.fiberScore.value = dish.healthScore.fiber;
+                }
+                updateAssociationVisibility(dish.associations);
+                openModal(ui.modals.dishForm);
+            };
+
+			const openAutoPopulateModal = async () => {
+                console.log(`%c[MODAL] Opening Auto-Populate Modal`, LOG_STYLE);
+                ui.autoPopulateFields.quotasContainer.innerHTML = '<p class="text-gray-500">Loading...</p>';
+                ui.autoPopulateFields.excludeList.innerHTML = '';
+                const mainDishes = allDishes.filter(d => d.type === 'Main').sort((a,b) => a.name.localeCompare(b.name));
+                const allDishNames = allDishes.map(d => d.name).sort();
+                const savedSettings = await loadAutoPopulateSettings();
+                
+                ui.autoPopulateFields.quotasContainer.innerHTML = '';
+                mainDishes.forEach(dish => {
+                    ui.autoPopulateFields.quotasContainer.innerHTML += `<div class="flex items-center justify-between"><label for="quota-${dish.id}" class="text-sm">${dish.name}</label><input type="number" id="quota-${dish.id}" data-dish-name="${dish.name}" value="${savedSettings.quotas[dish.name] || 0}" min="0" class="quota-input border rounded-md p-1"></div>`;
+                });
+
+                ui.autoPopulateFields.excludeList.innerHTML = '';
+                allDishNames.forEach(name => {
+                    ui.autoPopulateFields.excludeList.innerHTML += `<div class="flex items-center"><input type="checkbox" id="exclude-${name.replace(/\s/g, '-')}" data-dish-name="${name}" ${savedSettings.excludedDishes.includes(name) ? 'checked' : ''} class="h-4 w-4 rounded"><label for="exclude-${name.replace(/\s/g, '-')}" class="ml-2 text-sm">${name}</label></div>`;
+                });
+                openModal(ui.modals.autoPopulate);
+            };
+
+            // --- Dropdown Population Logic ---
+            const populateSelect = (selectEl, dishType, mealType, selectedVal) => {
+                const options = allDishes.filter(d => d.type.toLowerCase() === dishType && d.intendedFor[mealType.toLowerCase()]);
+                selectEl.innerHTML = '<option value="">-- Select --</option>';
+                options.sort((a, b) => a.name.localeCompare(b.name)).forEach(d => selectEl.add(new Option(d.name, d.name)));
+                selectEl.value = selectedVal || "";
+            };
+
+            const updateGravySelect = () => {
+                const mainDish = allDishes.find(d => d.name === ui.editMealFields.mainSelect.value);
+                let graviesToShow = [];
+                if (!currentEditingMeal) return;
+                const allGraviesForMeal = allDishes.filter(d => d.type === 'Gravy' && d.intendedFor[currentEditingMeal]);
+                if (mainDish && mainDish.associations?.gravy?.length > 0) {
+                    const associatedGravyNames = new Set(mainDish.associations.gravy);
+                    graviesToShow = allGraviesForMeal.filter(g => associatedGravyNames.has(g.name));
+                } else {
+                    graviesToShow = allGraviesForMeal;
+                }
+                ui.editMealFields.gravySelect.innerHTML = '<option value="">-- Optional --</option>';
+                graviesToShow.sort((a,b) => a.name.localeCompare(b.name)).forEach(d => ui.editMealFields.gravySelect.add(new Option(d.name, d.name)));
+            };
+            
+            const updateSideSelect = () => {
+                const mainDish = allDishes.find(d => d.name === ui.editMealFields.mainSelect.value);
+                const gravyDish = allDishes.find(d => d.name === ui.editMealFields.gravySelect.value);
+                let sidesToShow = new Set();
+                if (!currentEditingMeal) return;
+                const allSidesForMeal = allDishes.filter(d => d.type === 'Side' && d.intendedFor[currentEditingMeal]).map(d => d.name);
+                if (mainDish?.associations?.side?.length > 0) {
+                    mainDish.associations.side.forEach(s => sidesToShow.add(s));
+                } else if (gravyDish?.associations?.side?.length > 0) {
+                    gravyDish.associations.side.forEach(s => sidesToShow.add(s));
+                } else {
+                    allSidesForMeal.forEach(s => sidesToShow.add(s));
+                }
+                ui.editMealFields.sideSelect.innerHTML = '<option value="">-- Optional --</option>';
+                Array.from(sidesToShow).sort().forEach(name => ui.editMealFields.sideSelect.add(new Option(name, name)));
+            };
+
+            const updateAssociationVisibility = (associations = {}) => {
+                const currentType = ui.dishFormFields.type.value;
+                const showGravyGroup = (currentType === 'Main');
+                const showSideGroup = (currentType === 'Main' || currentType === 'Gravy');
+                ui.dishFormFields.assocMainGroup.classList.add('hidden');
+                ui.dishFormFields.assocGravyGroup.classList.toggle('hidden', !showGravyGroup);
+                ui.dishFormFields.assocSideGroup.classList.toggle('hidden', !showSideGroup);
+                if (showGravyGroup) populateAssociationSelect(ui.dishFormFields.assocGravies, 'gravy', associations.gravy || []);
+                if (showSideGroup) populateAssociationSelect(ui.dishFormFields.assocSides, 'side', associations.side || []);
+            };
+
+            const populateAssociationSelect = (selectEl, targetDishType, selectedValues = []) => {
+                selectEl.innerHTML = '';
+                const selectedSet = new Set(selectedValues);
+                allDishes.filter(d => d.type.toLowerCase() === targetDishType)
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .forEach(dish => {
+                        const option = new Option(dish.name, dish.name);
+                        if (selectedSet.has(dish.name)) option.selected = true;
+                        selectEl.add(option);
+                    });
+            };
+
+            // --- Firestore Logic ---
+            const getFirestoreUserId = () => currentUserId;
+
+            const subscribeToMealPlan = (date) => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+                const planDocRef = doc(db, 'artifacts', appId, 'users', userId, 'meal_plans', formatDate(date));
+                unsubscribeMealPlan = onSnapshot(planDocRef, (docSnap) => {
+                    const data = docSnap.exists() ? docSnap.data() : {};
+                    currentWeekMealPlans[formatDate(date)] = data;
+                    if (currentViewMode === 'day') updateMealCards(data);
+                }, (e) => console.error("Error listening to meal plan:", e));
+            };
+
+            const fetchWeekMealPlans = async (startDate) => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+                const weekStart = new Date(startDate);
+                weekStart.setDate(startDate.getDate() - (startDate.getDay() || 7) + 1);
+                const promises = Array.from({ length: 7 }).map((_, i) => {
+                    const day = new Date(weekStart);
+                    day.setDate(weekStart.getDate() + i);
+                    return getDoc(doc(db, 'artifacts', appId, 'users', userId, 'meal_plans', formatDate(day)));
+                });
+                const docSnaps = await Promise.all(promises);
+                docSnaps.forEach((snap, i) => {
+                    const day = new Date(weekStart);
+                    day.setDate(weekStart.getDate() + i);
+                    currentWeekMealPlans[formatDate(day)] = snap.exists() ? snap.data() : {};
+                });
+            };
+
+            const subscribeToInventory = () => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+                const invRef = collection(db, 'artifacts', appId, 'users', userId, 'inventory');
+                unsubscribeInventory = onSnapshot(invRef, (snapshot) => {
+                    inventory = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name));
+                    if (document.getElementById('fridge-view').classList.contains('active')) renderFridge();
+                }, (e) => console.error("Error listening to inventory:", e));
+            };
+            
+            const fetchAllDishes = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+                const dishesRef = collection(db, 'artifacts', appId, 'users', userId, 'dishes');
+                try {
+                    const snapshot = await getDocs(dishesRef);
+                    allDishes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    console.log(`%c[DB] Fetched ${allDishes.length} dishes.`, 'color: green;');
+                } catch (e) { console.error("Error fetching dishes:", e); }
+            };
+
+			const handleSaveDish = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+                const dishName = ui.dishFormFields.name.value.trim();
+                if (!dishName) { showMessage("Dish name is required."); return; }
+                const type = ui.dishFormFields.type.value;
+                const originalDish = currentEditingDishId ? allDishes.find(d => d.id === currentEditingDishId) : {};
+                const associations = originalDish.associations || {};
+                if (type === 'Main') {
+                    associations.gravy = Array.from(ui.dishFormFields.assocGravies.selectedOptions).map(opt => capitalize(opt.value));
+                    associations.side = Array.from(ui.dishFormFields.assocSides.selectedOptions).map(opt => capitalize(opt.value));
+                } else if (type === 'Gravy') {
+                    associations.side = Array.from(ui.dishFormFields.assocSides.selectedOptions).map(opt => capitalize(opt.value));
+                    delete associations.gravy;
+                } else {
+                    delete associations.gravy;
+                    delete associations.side;
+                }
+                const dishData = {
+                    name: capitalize(dishName), type: type,
+                    intendedFor: { breakfast: ui.dishFormFields.isBreakfast.checked, lunch: ui.dishFormFields.isLunch.checked, dinner: ui.dishFormFields.isDinner.checked },
+                    ingredients: ui.dishFormFields.ingredients.value.split(',').map(s => capitalize(s.trim())).filter(Boolean),
+                    presoak: ui.dishFormFields.presoak.value.split(',').map(s => capitalize(s.trim())).filter(Boolean),
+                    remindPresoak: ui.dishFormFields.remindPresoak.checked,
+                    healthScore: { carb: parseInt(ui.dishFormFields.carbScore.value) || 0, protein: parseInt(ui.dishFormFields.proteinScore.value) || 0, fat: parseInt(ui.dishFormFields.fatScore.value) || 0, fiber: parseInt(ui.dishFormFields.fiberScore.value) || 0 },
+                    associations: associations,
+                    updatedAt: new Date()
+                };
+                try {
+                    if (currentEditingDishId) {
+                        await updateDoc(doc(db, 'artifacts', appId, 'users', userId, 'dishes', currentEditingDishId), dishData);
+                        showMessage('Dish updated!');
+                    } else {
+                        dishData.createdAt = new Date();
+                        await addDoc(collection(db, 'artifacts', appId, 'users', userId, 'dishes'), dishData);
+                        showMessage('Dish added!');
+                    }
+                    closeModal(ui.modals.dishForm);
+                    await fetchAllDishes();
+					await syncInventoryFromDishes();
+                    renderDishes();
+                } catch (e) { showMessage(`Error saving dish: ${e.message}`); }
+            };
+
+            // New function to regenerate inventory from all dishes
+            const syncInventoryFromDishes = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+
+                console.log('%c[DB] Syncing inventory from all dishes...', LOG_STYLE);
+                const inventoryCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'inventory');
+                const batch = writeBatch(db);
+                const existingInventoryMap = new Map(inventory.map(item => [item.name.toLowerCase(), item.id])); // Map existing items to their IDs
+                const allDishIngredients = new Set();
+
+                // Collect all unique basic ingredients from all dishes
+                allDishes.forEach(dish => {
+                    dish.ingredients.forEach(ing => allDishIngredients.add(ing.toLowerCase()));
+                });
+
+                // Add any new ingredients to inventory that are not already there
+                for (const ingredientName of allDishIngredients) {
+                    if (!existingInventoryMap.has(ingredientName)) {
+                        batch.set(doc(inventoryCollectionRef), { name: capitalize(ingredientName), inStock: false, createdAt: new Date() });
+                    }
+                }
+                await batch.commit();
+                // The onSnapshot listener for inventory will automatically re-render the fridge view.
+                console.log('%c[DB] Inventory sync complete.', 'color: green;');
+            };
+
+            const saveMealPlan = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+                const planUpdateData = {
+                    main: ui.editMealFields.mainSelect.value,
+                    gravy: ui.editMealFields.gravySelect.value,
+                    side: ui.editMealFields.sideSelect.value
+                };
+                try {
+                    const planDocRef = doc(db, 'artifacts', appId, 'users', userId, 'meal_plans', currentEditingDay);
+                    await setDoc(planDocRef, { [currentEditingMeal]: planUpdateData }, { merge: true });
+                    
+                    if (!currentWeekMealPlans[currentEditingDay]) currentWeekMealPlans[currentEditingDay] = {};
+                    currentWeekMealPlans[currentEditingDay][currentEditingMeal] = planUpdateData;
+                    
+                    closeModal(ui.modals.editMeal);
+                    if (currentViewMode === 'week') await renderWeekView();
+                    
+                } catch (e) { console.error("Failed to save meal plan:", e); showMessage("Failed to save meal plan."); }
+            };
+
+            async function updateInventory(itemId, inStock) {
+                const userId = getFirestoreUserId();
+                if (!userId) {
+                    showMessage("Please log in to update your inventory.");
+                    console.warn('%c[DB] Cannot update inventory: User not authenticated.', 'color: orange;');
+                    return;
+                }
+                console.log(`%c[DB] Attempting to update inventory for item ${itemId} to inStock: ${inStock}`, LOG_STYLE);
+                const itemRef = doc(db, 'artifacts', appId, 'users', userId, 'inventory', itemId);
+                try {
+                    await updateDoc(itemRef, { inStock: inStock });
+                    console.log(`%c[DB] Updated inventory item ${itemId} to inStock: ${inStock}`, 'color: green');
+                } catch (e) {
+                    console.error(`%c[DB] Failed to update inventory for ${itemId}:`, 'color: red;', e);
+                    showMessage("Failed to update inventory.");
+                }
+            }
+            
+            const migrateData = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+                const tsvData = ui.migrationFields.csvInput.value.trim();
+                if (!tsvData) { showMessage("Please paste TSV data."); return; }
+                ui.migrationFields.importBtn.disabled = true;
+                ui.migrationFields.importBtn.textContent = 'Importing...';
+                try {
+                    const batch = writeBatch(db);
+                    const dishesRef = collection(db, 'artifacts', appId, 'users', userId, 'dishes');
+                    const inventoryRef = collection(db, 'artifacts', appId, 'users', userId, 'inventory');
+                    if (ui.migrationFields.clearCheckbox.checked) {
+                        (await getDocs(dishesRef)).forEach(d => batch.delete(d.ref));
+                        (await getDocs(inventoryRef)).forEach(d => batch.delete(d.ref));
+                    }
+                    const lines = tsvData.split('\n');
+                    const headers = lines.shift().split('\t').map(h => h.trim().toLowerCase().replace(/-/g, ' '));
+                    const getCol = (v, h) => v[headers.indexOf(h.toLowerCase())]?.trim() || '';
+                    const toArrayAndCapitalize = (s) => s ? s.split(',').map(i => capitalize(i.trim())).filter(Boolean) : [];
+                    const uniqueIngredients = new Set();
+                    lines.forEach(line => {
+                        if (!line.trim()) return;
+                        const values = line.split('\t');
+                        const dishName = getCol(values, 'food');
+                        if (!dishName) return;
+                        const ingredients = toArrayAndCapitalize(getCol(values, 'basic ingredient'));
+                        ingredients.forEach(ing => uniqueIngredients.add(ing.toLowerCase()));
+                        const dishData = {
+                            name: capitalize(dishName),
+                            type: capitalize(getCol(values, 'type') || 'Main'),
+                            intendedFor: { breakfast: getCol(values, 'breakfast').toLowerCase() === 'yes', lunch: getCol(values, 'lunch').toLowerCase() === 'yes', dinner: getCol(values, 'dinner').toLowerCase() === 'yes' },
+                            associations: { gravy: toArrayAndCapitalize(getCol(values, 'associated gravy names (csv)')), side: toArrayAndCapitalize(getCol(values, 'gravy associated side names (csv)')) },
+                            ingredients: ingredients,
+                            presoak: toArrayAndCapitalize(getCol(values, 'presoak ingredients')),
+                            remindPresoak: getCol(values, 'always remind presoak').toLowerCase() === 'yes',
+                            healthScore: { carb: parseInt(getCol(values, 'carb (1 5)')) || 0, protein: parseInt(getCol(values, 'protein (1 5)')) || 0, fat: parseInt(getCol(values, 'fat (1 5)')) || 0, fiber: parseInt(getCol(values, 'fiber (1 5)')) || 0 },
+                            createdAt: new Date(), updatedAt: new Date()
+                        };
+                        batch.set(doc(dishesRef), dishData);
+                    });
+                    uniqueIngredients.forEach(ing => batch.set(doc(inventoryRef), { name: ing, inStock: false, createdAt: new Date() }));
+                    await batch.commit();
+                    showMessage('Migration successful!');
+                    closeModal(ui.modals.migration);
+                    await fetchAllDishes();
+                    renderDishes();
+                } catch (e) { showMessage(`Migration failed: ${e.message}`); } 
+                finally { ui.migrationFields.importBtn.disabled = false; ui.migrationFields.importBtn.textContent = 'Import'; }
+            };
+
+            const saveHealthGoals = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+                const goals = {
+                    breakfast: { carb: parseInt(ui.healthGoalsFields.bfCarb.value) || 0, protein: parseInt(ui.healthGoalsFields.bfProtein.value) || 0, fat: parseInt(ui.healthGoalsFields.bfFat.value) || 0, fiber: parseInt(ui.healthGoalsFields.bfFiber.value) || 0 },
+                    lunch: { carb: parseInt(ui.healthGoalsFields.lunchCarb.value) || 0, protein: parseInt(ui.healthGoalsFields.lunchProtein.value) || 0, fat: parseInt(ui.healthGoalsFields.lunchFat.value) || 0, fiber: parseInt(ui.healthGoalsFields.lunchFiber.value) || 0 },
+                    dinner: { carb: parseInt(ui.healthGoalsFields.dinnerCarb.value) || 0, protein: parseInt(ui.healthGoalsFields.dinnerProtein.value) || 0, fat: parseInt(ui.healthGoalsFields.dinnerFat.value) || 0, fiber: parseInt(ui.healthGoalsFields.dinnerFiber.value) || 0 }
+                };
+                await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'user_settings', 'health_goals'), goals);
+                weeklyHealthGoals = goals;
+                localStorage.setItem('weeklyHealthGoals', JSON.stringify(weeklyHealthGoals)); // Save to localStorage
+                showMessage('Health goals saved!');
+                closeModal(ui.modals.healthGoals);
+            };
+			
+            const executeAutoPopulation = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) {
+                    showMessage("Please log in to auto-populate.");
+                    return;
+                }
+                console.log('%c[APP] Starting auto-population...', LOG_STYLE);
+                ui.autoPopulateFields.runBtn.disabled = true;
+                ui.autoPopulateFields.runBtn.textContent = 'Generating...';
+
+                await loadHealthGoals(); // Ensure health goals are loaded
+
+                const quotas = {};
+                ui.autoPopulateFields.quotasContainer.querySelectorAll('input[type="number"]').forEach(input => {
+                    quotas[input.dataset.dishName] = parseInt(input.value) || 0;
+                });
+
+                const excludedDishes = [];
+                ui.autoPopulateFields.excludeList.querySelectorAll('input[type="checkbox"]:checked').forEach(input => {
+                    excludedDishes.push(input.dataset.dishName);
+                });
+
+                await saveAutoPopulateSettings({ quotas, excludedDishes });
+
+                try {
+                    const batch = writeBatch(db);
+                    const weekStart = new Date(currentDate);
+                    weekStart.setDate(currentDate.getDate() - (currentDate.getDay() || 7) + 1);
+                    
+                    for (let i = 0; i < 7; i++) {
+                        const day = new Date(weekStart);
+                        day.setDate(weekStart.getDate() + i);
+                        batch.set(doc(db, 'artifacts', appId, 'users', userId, 'meal_plans', formatDate(day)), {});
+                    }
+                    await batch.commit();
+                    await fetchWeekMealPlans(currentDate);
+
+                    const mealTypes = ['breakfast', 'lunch', 'dinner'];
+                    const currentWeekUsedDishes = new Map();
+                    const mainDishQuotasState = new Map(Object.entries(quotas).map(([name, count]) => [name, { targetCount: count, scheduledCount: 0 }]));
+                    const actualWeeklyHealthTotals = {
+                        'breakfast': { carb: 0, protein: 0, fat: 0, fiber: 0, count: 0 },
+                        'lunch':     { carb: 0, protein: 0, fat: 0, fiber: 0, count: 0 },
+                        'dinner':    { carb: 0, protein: 0, fat: 0, fiber: 0, count: 0 }
+                    };
+                    const newMealPlans = {};
+
+                    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                        const dayDate = new Date(weekStart);
+                        dayDate.setDate(weekStart.getDate() + dayIndex);
+                        const dateString = formatDate(dayDate);
+                        newMealPlans[dateString] = {};
+
+                        for (const mealType of mealTypes) {
+                            const targetHealth = weeklyHealthGoals[mealType] || { carb: 0, protein: 0, fat: 0, fiber: 0 };
+                            
+                            const potentialMains = allDishes.filter(d => d.type === 'Main' && d.intendedFor[mealType] && !excludedDishes.includes(d.name));
+                            const selectedMain = selectDishWithVariety(potentialMains, targetHealth, currentWeekUsedDishes, mainDishQuotasState, 'main');
+                            newMealPlans[dateString][mealType] = { main: selectedMain };
+
+                            if (selectedMain && selectedMain !== 'No Main Found') {
+                                const dishInfo = allDishes.find(d => d.name === selectedMain);
+                                if (dishInfo?.healthScore) {
+                                    Object.keys(dishInfo.healthScore).forEach(k => actualWeeklyHealthTotals[mealType][k] += dishInfo.healthScore[k]);
+                                    actualWeeklyHealthTotals[mealType].count++;
+                                }
+                                if (mainDishQuotasState.has(selectedMain)) mainDishQuotasState.get(selectedMain).scheduledCount++;
+                            }
+
+                            let selectedGravy = '';
+                            if (selectedMain && selectedMain !== 'No Main Found') {
+                                const mainDishInfo = allDishes.find(d => d.name === selectedMain);
+                                const associatedGravies = mainDishInfo?.associations?.gravy || [];
+                                const possibleGravyNames = associatedGravies.length > 0 ? associatedGravies : allDishes.filter(d => d.type === 'Gravy').map(d => d.name);
+                                const potentialGravies = allDishes.filter(d => d.type === 'Gravy' && d.intendedFor[mealType] && possibleGravyNames.includes(d.name) && !excludedDishes.includes(d.name));
+                                selectedGravy = selectDishWithVariety(potentialGravies, targetHealth, currentWeekUsedDishes, mainDishQuotasState, 'gravy');
+                            }
+                            newMealPlans[dateString][mealType].gravy = selectedGravy;
+                            
+                            let selectedSide = '';
+                            const mainDishInfo = allDishes.find(d => d.name === selectedMain);
+                            const gravyDishInfo = allDishes.find(d => d.name === selectedGravy);
+                            const possibleSideNames = new Set();
+                            if (mainDishInfo?.associations?.side?.length > 0) mainDishInfo.associations.side.forEach(s => possibleSideNames.add(s));
+                            else if (gravyDishInfo?.associations?.side?.length > 0) gravyDishInfo.associations.side.forEach(s => possibleSideNames.add(s));
+                            else allDishes.filter(d => d.type === 'Side').map(d => d.name).forEach(s => possibleSideNames.add(s));
+                            const potentialSides = allDishes.filter(d => d.type === 'Side' && d.intendedFor[mealType] && possibleSideNames.has(d.name) && !excludedDishes.includes(d.name));
+                            selectedSide = selectDishWithVariety(potentialSides, targetHealth, currentWeekUsedDishes, mainDishQuotasState, 'side');
+                            newMealPlans[dateString][mealType].side = selectedSide;
+                        }
+                    }
+
+                    const saveBatch = writeBatch(db);
+                    for (const dateString in newMealPlans) {
+                        saveBatch.set(doc(db, 'artifacts', appId, 'users', userId, 'meal_plans', dateString), newMealPlans[dateString]);
+                    }
+                    await saveBatch.commit();
+                    
+                    showMessage('Meal plan auto-populated successfully!');
+                    closeModal(ui.modals.autoPopulate);
+                    if (currentViewMode === 'week') await renderWeekView();
+
+                    const reportData = { health: {}, quotas: [] };
+                    const healthMetrics = ['carb', 'protein', 'fat', 'fiber'];
+                    mealTypes.forEach(mealType => {
+                        reportData.health[mealType] = {};
+                        const target = weeklyHealthGoals[mealType];
+                        const actual = actualWeeklyHealthTotals[mealType];
+                        healthMetrics.forEach(metric => {
+                            const targetVal = target[metric];
+                            const actualSum = actual[metric];
+                            let actualAvg = (actual.count > 0) ? (actualSum / actual.count) : 0;
+                            let deviationPercent = (targetVal !== 0) ? (Math.abs(actualAvg - targetVal) / targetVal * 100) : 0;
+                            reportData.health[mealType][metric] = {
+                                target: targetVal,
+                                actual: actualAvg.toFixed(1), // Store as fixed decimal
+                                deviation: deviationPercent.toFixed(1) // Store as fixed decimal
+                            };
+                        });
+                    });
+                    console.log('%c[AUTO_POPULATE] Health report data:', LOG_STYLE, reportData.health);
+
+                    let allQuotasMet = true;
+                    mainDishQuotasState.forEach((quota, dishName) => {
+                        if (quota.scheduledCount < quota.targetCount) allQuotasMet = false;
+                        reportData.quotas.push({ name: dishName, scheduled: quota.scheduledCount, target: quota.targetCount });
+                    });
+                    reportData.quotas.sort((a,b) => a.name.localeCompare(b.name));
+                    reportData.allQuotasMet = allQuotasMet;
+                    showHealthReport(reportData);
+
+                } catch (error) {
+                    console.error("[AUTO_POPULATE] Error:", error);
+                    showMessage(`Auto-population failed: ${error.message}`);
+                } finally {
+                    ui.autoPopulateFields.runBtn.disabled = false;
+                    ui.autoPopulateFields.runBtn.textContent = 'Auto-Populate';
+                }
+            };
+
+            const getDishScore = (dishInfo, targetHealth, currentWeekUsedDishes, mainDishQuotas) => {
+                if (!dishInfo?.healthScore) return Infinity;
+                let score = 0;
+                if (dishInfo.type === 'Main' && mainDishQuotas.has(dishInfo.name)) {
+                    const quota = mainDishQuotas.get(dishInfo.name);
+                    if (quota.scheduledCount < quota.targetCount) score -= (1000 + quota.scheduledCount * 10);
+                }
+                ['carb', 'protein', 'fat', 'fiber'].forEach(metric => {
+                    const targetVal = targetHealth[metric] || 0;
+                    if (targetVal === 0) return;
+                    const dishVal = dishInfo.healthScore[metric] || 0;
+                    const deviation = Math.abs(dishVal - targetVal);
+                    score += deviation;
+                });
+                score += (currentWeekUsedDishes.get(dishInfo.name) || 0) * 10;
+                return score;
+            };
+
+            const selectDishWithVariety = (potentialDishes, targetHealth, currentWeekUsedDishes, mainDishQuotas, dishType) => {
+                if (potentialDishes.length === 0) return `No ${capitalize(dishType)} Found`;
+                const dishesWithScores = potentialDishes.map(info => ({ name: info.name, score: getDishScore(info, targetHealth, currentWeekUsedDishes, mainDishQuotas) }));
+                dishesWithScores.sort((a, b) => a.score - b.score);
+                const minScore = dishesWithScores[0].score;
+                const topTierDishes = dishesWithScores.filter(d => d.score <= minScore + 2);
+                const selectedDish = topTierDishes[Math.floor(Math.random() * topTierDishes.length)];
+                if (selectedDish.name) currentWeekUsedDishes.set(selectedDish.name, (currentWeekUsedDishes.get(selectedDish.name) || 0) + 1);
+                return selectedDish.name;
+            };
+ 
+			const showHealthReport = (reportData) => {
+                console.log(`%c[RENDER] Showing Health Report`, LOG_STYLE, reportData);
+                const { health, quotas, allQuotasMet } = reportData;
+                ui.healthReportFields.summaryContent.innerHTML = ''; 
+                const mealTypes = ['breakfast', 'lunch', 'dinner'];
+                
+                mealTypes.forEach(mealType => {
+                    // Failsafe check for health data
+                    if (!health || !health[mealType]) {
+                        console.error(`%c[RENDER] Missing health data for meal type: ${mealType}`, 'color: red;');
+                        return; // Skip this meal type if data is missing
+                    }
+
+                    const mealDiv = document.createElement('div');
+                    mealDiv.className = 'bg-gray-100 p-3 rounded-md shadow-sm';
+                    mealDiv.innerHTML = `<h4 class="font-bold capitalize mb-2 text-indigo-700">${mealType}</h4>`;
+                    const ul = document.createElement('ul');
+                    ul.className = 'space-y-1 text-gray-700';
+                    
+                    ['carb', 'protein', 'fat', 'fiber'].forEach(metric => {
+                        // Directly use the data from reportData.health[mealType][metric] which is already structured
+                        const data = health[mealType][metric];
+                        const deviationClass = parseFloat(data.deviation) <= 40 ? 'text-green-600' : 'text-red-600'; // Define a threshold for "good" deviation
+                        ul.innerHTML += `<li><strong>${capitalize(metric)}:</strong> Target ${data.target}, Actual ${data.actual} <span class="${deviationClass}">(${data.deviation}%)</span></li>`;
+                    });
+                    
+                    mealDiv.appendChild(ul);
+                    ui.healthReportFields.summaryContent.appendChild(mealDiv);
+                });
+
+                ui.healthReportFields.quotaList.innerHTML = '';
+                quotas.forEach(q => {
+                    const li = document.createElement('li');
+                    li.textContent = `${q.name}: Scheduled ${q.scheduled}, Target ${q.target}`;
+                    li.className = q.scheduled < q.target ? 'text-red-600' : 'text-green-600';
+                    ui.healthReportFields.quotaList.appendChild(li);
+                });
+
+                ui.healthReportFields.quotaStatus.textContent = allQuotasMet ? 'All main dish quotas met!' : 'Some main dish quotas were not fully met.';
+                ui.healthReportFields.quotaStatus.className = `mt-2 font-bold ${allQuotasMet ? 'text-green-600' : 'text-red-600'}`;
+                openModal(ui.modals.healthReport);
+            };
+            const loadHealthGoals = async () => {
+                const userId = getFirestoreUserId();
+                // Attempt to load from localStorage first for persistence
+                const localGoals = localStorage.getItem('weeklyHealthGoals');
+                if (localGoals) {
+                    weeklyHealthGoals = JSON.parse(localGoals);
+                    console.log('%c[DB] Health goals loaded from localStorage.', 'color: green;', weeklyHealthGoals);
+                    return;
+                }
+                
+                if (!userId) return; // If no user and no local storage, return default (empty)
+
+                const snap = await getDoc(doc(db, 'artifacts', appId, 'users', userId, 'user_settings', 'health_goals'));
+                if (snap.exists()) {
+                    weeklyHealthGoals = snap.data();
+                    console.log('%c[DB] Health goals loaded from Firestore.', 'color: green;', weeklyHealthGoals);
+                } else {
+                    // Set default if not found in Firestore or localStorage
+                    weeklyHealthGoals = { breakfast: { carb: 0, protein: 0, fat: 0, fiber: 0 }, lunch: { carb: 0, protein: 0, fat: 0, fiber: 0 }, dinner: { carb: 0, protein: 0, fat: 0, fiber: 0 } };
+                    console.log('%c[DB] No health goals found, initialized to default.', 'color: orange;', weeklyHealthGoals);
+                }
+            };
+
+            const saveAutoPopulateSettings = async (settings) => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+                await setDoc(doc(db, 'artifacts', appId, 'users', userId, 'user_settings', 'auto_populate_settings'), settings);
+            };
+
+            const loadAutoPopulateSettings = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) return { quotas: {}, excludedDishes: [] };
+                const snap = await getDoc(doc(db, 'artifacts', appId, 'users', userId, 'user_settings', 'auto_populate_settings'));
+                return snap.exists() ? snap.data() : { quotas: {}, excludedDishes: [] };
+            };
+
+            const generateShoppingList = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+                showMessage('Generating shopping list...');
+                await fetchWeekMealPlans(currentDate);
+                const missingBasic = [];
+                const presoakReminders = [];
+                const addedToShoppingList = new Set(); // To avoid duplicates in shopping list
+                const addedToPresoakReminders = new Set(); // To avoid duplicates in presoak reminders
+
+                const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                const mealTypes = ['breakfast', 'lunch', 'dinner'];
+
+                const weekStart = new Date(currentDate);
+                weekStart.setDate(currentDate.getDate() - currentDate.getDay() + 1); // Set to Monday
+                if (weekStart.getDay() === 0) weekStart.setDate(weekStart.getDate() - 7); // If Sunday, go back a week
+
+                await fetchWeekMealPlans(currentDate); // Ensure currentWeekMealPlans is populated
+
+                for (let i = 0; i < 7; i++) {
+                    const dayDate = new Date(weekStart);
+                    dayDate.setDate(weekStart.getDate() + i);
+                    const dateString = formatDate(dayDate);
+                    const dayName = daysOfWeek[i];
+                    const mealPlanForDay = currentWeekMealPlans[dateString] || {};
+
+                    for (const mealType of mealTypes) {
+                        const meal = mealPlanForDay[mealType] || {};
+                        // Filter out placeholder strings like "No Gravy Found"
+                        const dishesForMeal = [meal.main, meal.gravy, meal.side].filter(dishName => 
+                            dishName && 
+                            !dishName.startsWith('No ') // Filter out placeholders
+                        );
+
+                        for (const dishName of dishesForMeal) {
+                            const dishInfo = allDishes.find(d => d.name === dishName);
+                            if (!dishInfo) {
+                                console.warn(`Dish "${dishName}" not found in allDishes. Skipping.`);
+                                continue;
+                            }
+
+                            // Check basic ingredients
+                            dishInfo.ingredients.forEach(ingredient => {
+                                const inStock = inventory.some(item => item.name.toLowerCase() === ingredient.toLowerCase() && item.inStock);
+                                if (!inStock && !addedToShoppingList.has(ingredient.toLowerCase())) {
+                                    missingBasic.push({
+                                        ingredient: ingredient,
+                                        dish: dishName,
+                                        meal: mealType.charAt(0).toUpperCase() + mealType.slice(1),
+                                        day: dayName
+                                    });
+                                    addedToShoppingList.add(ingredient.toLowerCase());
+                                }
+                            });
+
+                            // Check presoak ingredients
+                            dishInfo.presoak.forEach(ingredient => {
+                                const inStock = inventory.some(item => item.name.toLowerCase() === ingredient.toLowerCase() && item.inStock);
+                                const reminderKey = `${ingredient.toLowerCase()}-${dishName}-${mealType}-${dayName}`;
+                                if ((dishInfo.remindPresoak || !inStock) && !addedToPresoakReminders.has(reminderKey)) {
+                                    presoakReminders.push({
+                                        ingredient: ingredient,
+                                        dish: dishName,
+                                        meal: mealType.charAt(0).toUpperCase() + mealType.slice(1),
+                                        day: dayName
+                                    });
+                                    addedToPresoakReminders.add(reminderKey);
+                                }
+                            });
+                        }
+                    }
+                }
+
+                // Sort the lists for better readability
+                missingBasic.sort((a, b) => a.ingredient.localeCompare(b.ingredient));
+                presoakReminders.sort((a, b) => daysOfWeek.indexOf(a.day) - daysOfWeek.indexOf(b.day));
+
+                const shoppingListData = {
+                    missingBasic: missingBasic,
+                    presoakReminders: presoakReminders
+                };
+                // Store presoakRemindersData on the container for later access by calendar modal
+                ui.shoppingView.container.presoakRemindersData = presoakReminders;
+                
+                closeModal(ui.modals.message); // Close loading message
+                renderShoppingList(shoppingListData);
+                //switchView('shopping-view', 'Shopping List');
+                if (presoakReminders.length > 0) openModal(ui.modals.calendarReminder);
+            };
+
+            const clearCurrentDay = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+                closeModal(ui.modals.clearPlan);
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'meal_plans', formatDate(currentDate)));
+                showMessage('Current day cleared!');
+            };
+
+            const clearEntireWeek = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+                closeModal(ui.modals.clearPlan);
+                const batch = writeBatch(db);
+                const weekStart = new Date(currentDate);
+                weekStart.setDate(currentDate.getDate() - (currentDate.getDay() || 7) + 1);
+                for (let i = 0; i < 7; i++) {
+                    const day = new Date(weekStart);
+                    day.setDate(weekStart.getDate() + i);
+                    batch.delete(doc(db, 'artifacts', appId, 'users', userId, 'meal_plans', formatDate(day)));
+                }
+                await batch.commit();
+                showMessage('Entire week cleared!');
+                // Explicitly clear shopping list UI
+                renderShoppingList({ missingBasic: [], presoakReminders: [] });
+                // Re-render the current view to reflect changes
+                if (currentViewMode === 'day') {
+                    renderDayView(currentDate);
+                } else {
+                    renderWeekView();
+                }
+            };
+
+            // --- Event Listeners ---
+            const setupEventListeners = () => {
+                console.log(`%c[EVENTS] Setting up all event listeners...`, LOG_STYLE);
+                ui.navButtons.forEach(btn => btn.addEventListener('click', e => { e.preventDefault(); switchView(e.currentTarget.dataset.view, e.currentTarget.dataset.title); }));
+                ui.dishesView.filterBtns.forEach(btn => btn.addEventListener('click', e => {
+                    ui.dishesView.filterBtns.forEach(b => b.classList.remove('active', 'bg-indigo-600', 'text-white'));
+                    e.currentTarget.classList.add('active', 'bg-indigo-600', 'text-white');
+                    renderDishes(e.currentTarget.dataset.filter);
+                }));
+                ui.planView.prevDayBtn.addEventListener('click', () => changeDay(-1));
+                ui.planView.nextDayBtn.addEventListener('click', () => changeDay(1));
+                ui.dishesView.migrateBtn.addEventListener('click', () => openModal(ui.modals.migration));
+                ui.migrationFields.cancelBtn.addEventListener('click', () => closeModal(ui.modals.migration));
+                ui.migrationFields.importBtn.addEventListener('click', migrateData);
+                ui.planView.mealCards.forEach(card => card.addEventListener('click', e => openEditModal(e.currentTarget.dataset.meal)));
+                ui.editMealFields.cancelBtn.addEventListener('click', () => closeModal(ui.modals.editMeal));
+                ui.editMealFields.saveBtn.addEventListener('click', saveMealPlan);
+                ui.editMealFields.mainSelect.addEventListener('change', () => { updateGravySelect(); updateSideSelect(); });
+                ui.editMealFields.gravySelect.addEventListener('change', updateSideSelect);
+                ui.dishesView.addDishBtn.addEventListener('click', () => {
+                    ui.dishFormFields.form.reset();
+                    currentEditingDishId = null;
+                    ui.dishFormFields.title.textContent = 'Add New Dish';
+                    updateAssociationVisibility();
+                    openModal(ui.modals.dishForm);
+                });
+                ui.dishFormFields.cancelBtn.addEventListener('click', () => closeModal(ui.modals.dishForm));
+                ui.dishFormFields.saveBtn.addEventListener('click', handleSaveDish);
+                ui.dishFormFields.type.addEventListener('change', () => updateAssociationVisibility());
+                ui.dishesView.dishesList.addEventListener('click', async e => {
+                    const editBtn = e.target.closest('.edit-dish-btn');
+                    if (editBtn) {
+                        const dish = allDishes.find(d => d.id === editBtn.dataset.id);
+                        if (dish) openDishFormForEdit(dish);
+                        return;
+                    }
+                    const deleteBtn = e.target.closest('.delete-dish-btn');
+                    if (deleteBtn) {
+                        const dish = allDishes.find(d => d.id === deleteBtn.dataset.id);
+                        if (confirm(`Delete "${dish.name}"?`)) {
+                            await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUserId, 'dishes', dish.id));
+                            showMessage('Dish deleted.');
+                            await fetchAllDishes();
+                            renderDishes();
+                        }
+                    }
+                });
+                ui.fridgeView.list.addEventListener('change', e => { if (e.target.classList.contains('toggle-checkbox')) updateInventory(e.target.dataset.id, e.target.checked); });
+                ui.planView.weekViewToggleBtn.addEventListener('click', togglePlanView); 
+                ui.messageFields.closeBtn.addEventListener('click', () => closeModal(ui.modals.message)); 
+                ui.planView.generateShoppingListBtn.addEventListener('click', generateShoppingList);
+                ui.planView.healthGoalsBtn.addEventListener('click', () => { loadHealthGoals().then(() => openModal(ui.modals.healthGoals)); });
+                ui.healthGoalsFields.cancelBtn.addEventListener('click', () => closeModal(ui.modals.healthGoals));
+                ui.healthGoalsFields.saveBtn.addEventListener('click', saveHealthGoals);
+                ui.planView.autoPopulateBtn.addEventListener('click', openAutoPopulateModal);
+                ui.autoPopulateFields.cancelBtn.addEventListener('click', () => closeModal(ui.modals.autoPopulate));
+                ui.autoPopulateFields.runBtn.addEventListener('click', executeAutoPopulation);
+                ui.healthReportFields.closeBtn.addEventListener('click', () => closeModal(ui.modals.healthReport));
+                ui.planView.clearPlanBtn.addEventListener('click', () => openModal(ui.modals.clearPlan));
+                ui.clearPlanFields.cancelBtn.addEventListener('click', () => closeModal(ui.modals.clearPlan));
+                ui.clearPlanFields.clearDayBtn.addEventListener('click', clearCurrentDay);
+                ui.clearPlanFields.clearWeekBtn.addEventListener('click', clearEntireWeek);
+                ui.planView.copyWeekBtn.addEventListener('click', openCopyWeekModal);
+                ui.calendarReminderFields.yesBtn.addEventListener('click', () => { closeModal(ui.modals.calendarReminder); /* createCalendarEvents() call would go here */ });
+                ui.calendarReminderFields.noBtn.addEventListener('click', () => closeModal(ui.modals.calendarReminder));
+                // Auth listeners
+                ui.planView.loginBtn.addEventListener('click', () => { authMode = 'login'; showAuthModal(); });
+                ui.planView.signupBtn.addEventListener('click', () => { authMode = 'signup'; showAuthModal(); });
+                ui.planView.logoutBtn.addEventListener('click', handleLogout);
+                ui.authFields.toggleModeBtn.addEventListener('click', e => { e.preventDefault(); authMode = (authMode === 'login' ? 'signup' : 'login'); showAuthModal(); });
+                ui.authFields.form.addEventListener('submit', handleAuthSubmit);
+                ui.authFields.forgotPasswordBtn.addEventListener('click', () => openModal(ui.modals.forgotPassword));
+                ui.copyWeekFields.cancelBtn.addEventListener('click', () => closeModal(ui.modals.copyWeek));
+                ui.copyWeekFields.confirmBtn.addEventListener('click', executeCopyWeek);
+                ui.forgotPasswordFields.cancelBtn.addEventListener('click', () => closeModal(ui.modals.forgotPassword));
+                ui.forgotPasswordFields.form.addEventListener('submit', handlePasswordReset);
+            };
+
+            // --- Navigation & View Control ---
+            const changeDay = (offset) => {
+                currentDate.setDate(currentDate.getDate() + offset);
+                console.log(`%c[NAV] Changing day to: ${formatDate(currentDate)}`, LOG_STYLE);
+                renderDayView(new Date(currentDate));
+            };
+
+            const changeWeek = (offset) => {
+                currentDate.setDate(currentDate.getDate() + (offset * 7)); // Move by 7 days
+                console.log(`%c[NAV] Changing week to: ${formatDate(currentDate)}`, LOG_STYLE);
+                renderWeekView();
+            };
+            
+            const switchView = (viewId, title) => {
+                console.log(`%c[NAV] Switching view to: ${viewId}`, LOG_STYLE);
+                ui.views.forEach(v => v.classList.toggle('active', v.id === viewId));
+                ui.navButtons.forEach(b => b.classList.toggle('active', b.dataset.view === viewId));
+                ui.headerTitle.textContent = title;
+                if (viewId === 'dishes-view') renderDishes();
+                else if (viewId === 'fridge-view') renderFridge();
+                else if (viewId === 'shopping-view') {
+                    //generateShoppingList(); // Re-generate shopping list when view is activated
+                    // This view is now responsible for displaying, but not regenerating unless button is clicked
+                    // Initial renderShoppingList will happen if data exists, otherwise it will show empty message.
+                    // User must click 'Generate Shopping List' button to re-generate.
+
+                }
+            };
+
+            const togglePlanView = () => {
+                console.log(`%c[NAV] Toggling plan view from ${currentViewMode}`, LOG_STYLE);
+                currentViewMode = (currentViewMode === 'day') ? 'week' : 'day';
+                ui.planView.dayViewContainer.classList.toggle('hidden');
+                ui.planView.weekViewContainer.classList.toggle('hidden');
+                ui.planView.weekViewToggleBtn.innerHTML = currentViewMode === 'week' ? '<i class="fas fa-calendar-day text-xl"></i>' : '<i class="fas fa-calendar-week text-xl"></i>';
+                ui.planView.prevWeekBtn.addEventListener('click', () => changeWeek(-1)); // Add this line
+                ui.planView.nextWeekBtn.addEventListener('click', () => changeWeek(1));  // Add this line
+
+                // Toggle visibility of day-specific vs. week-specific navigation elements
+                ui.planView.prevDayBtn.classList.toggle('hidden', currentViewMode === 'week');
+                ui.planView.nextDayBtn.classList.toggle('hidden', currentViewMode === 'week');
+                ui.planView.currentDateHeader.classList.toggle('hidden', currentViewMode === 'week');
+
+                ui.planView.prevWeekBtn.classList.toggle('hidden', currentViewMode === 'day');
+                ui.planView.nextWeekBtn.classList.toggle('hidden', currentViewMode === 'day');
+                ui.planView.currentWeekHeader.classList.toggle('hidden', currentViewMode === 'day');
+
+                if (currentViewMode === 'week') {
+                    renderWeekView(); 
+                } else {
+                    renderDayView(currentDate);
+                }
+            };
+            
+            // --- Authentication Logic ---
+            const updateAuthUI = (user) => {
+                console.log(`%c[AUTH] Updating UI for user:`, LOG_STYLE, user);
+                // Hide all main views and navigation by default
+                ui.views.forEach(v => v.classList.add('hidden'));
+                ui.navButtons.forEach(b => b.classList.remove('active'));
+                ui.mainContent.classList.add('opacity-50', 'pointer-events-none');
+                ui.headerTitle.textContent = 'Meal Plan'; // Reset header title
+                ui.planView.weekViewToggleBtn.innerHTML = '<i class="fas fa-calendar-week text-xl"></i>'; // Reset icon
+                ui.planView.loginBtn.classList.remove('hidden');
+                ui.planView.signupBtn.classList.remove('hidden');
+                ui.planView.logoutBtn.classList.add('hidden');
+                ui.mainContent.classList.add('opacity-50', 'pointer-events-none');
+                ui.planView.userStatus.textContent = 'Please Login'; // Default to "Please Login"
+                ui.headerTitle.textContent = 'Login'; // Set header title to Login on app load/logout
+                document.getElementById('main-nav').classList.add('hidden'); // Hide navigation by default
+
+                // Hide all header buttons and day/week navigation controls initially
+                const headerButtons = [
+                    ui.planView.weekViewToggleBtn, ui.planView.clearPlanBtn, ui.planView.copyWeekBtn,
+                    ui.planView.healthGoalsBtn, ui.planView.autoPopulateBtn, ui.planView.generateShoppingListBtn
+                ];
+                headerButtons.forEach(btn => btn.classList.add('hidden'));
+                ui.planView.prevDayBtn.classList.add('hidden');
+                ui.planView.nextDayBtn.classList.add('hidden');
+                ui.planView.currentDateHeader.classList.add('hidden');
+                ui.planView.prevWeekBtn.classList.add('hidden');
+                ui.planView.nextWeekBtn.classList.add('hidden');
+                ui.planView.currentWeekHeader.classList.add('hidden');
+ 
+
+                if (user) {
+                    ui.planView.userStatus.textContent = user.email;
+                    ui.planView.loginBtn.classList.add('hidden');
+                    ui.planView.signupBtn.classList.add('hidden');
+                    ui.planView.logoutBtn.classList.remove('hidden');
+                    ui.mainContent.classList.remove('opacity-50', 'pointer-events-none'); // Enable interaction
+                    ui.modals.auth.classList.add('hidden'); // Ensure auth modal is hidden after successful login
+                    ui.modals.auth.classList.remove('flex'); // Ensure auth modal is hidden after successful login
+                    ui.views[0].classList.add('active'); // Show plan view after login
+                    // Show header buttons and day navigation after login
+                    headerButtons.forEach(btn => btn.classList.remove('hidden'));
+                    ui.planView.prevDayBtn.classList.remove('hidden');
+                    ui.planView.nextDayBtn.classList.remove('hidden');
+                    ui.planView.currentDateHeader.classList.remove('hidden');
+                    ui.planView.prevWeekBtn.classList.add('hidden'); // Always start in day view for week nav
+                    ui.planView.nextWeekBtn.classList.add('hidden'); // Always start in day view for week nav
+
+                    ui.navButtons[0].classList.add('active'); // Activate Plan button
+                    ui.headerTitle.textContent = 'Meal Plan'; // Reset header to Meal Plan
+                    document.getElementById('main-nav').classList.remove('hidden'); // Show navigation
+                } else {
+                    // User is null (logged out), ensure auth modal is visible and main content is hidden
+                    openModal(ui.modals.auth);
+                    ui.mainContent.classList.add('opacity-50', 'pointer-events-none'); // Disable interaction
+                    document.getElementById('main-nav').classList.add('hidden'); // Hide navigation
+                }
+            };
+
+            const showAuthModal = () => {
+                authMode = (authMode === 'login') ? 'login' : 'signup';
+                ui.authFields.title.textContent = capitalize(authMode);
+                ui.authFields.submitBtn.textContent = capitalize(authMode);
+                ui.authFields.toggleModeBtn.textContent = authMode === 'login' ? 'Need an account? Sign Up' : 'Have an account? Login';
+                ui.authFields.form.reset();
+                openModal(ui.modals.auth);
+            };
+
+            const handleAuthSubmit = async (e) => {
+                e.preventDefault();
+                ui.authFields.submitBtn.disabled = true;
+                const email = ui.authFields.email.value;
+                const password = ui.authFields.password.value;
+                try {
+                    if (authMode === 'signup') await createUserWithEmailAndPassword(auth, email, password);
+                    else await signInWithEmailAndPassword(auth, email, password);
+                    closeModal(ui.modals.auth);
+                    showMessage('Logged in successfully!'); // Only show successful login message here
+                } catch (error) {
+                    if (['auth/wrong-password', 'auth/user-not-found', 'auth/invalid-credential'].includes(error.code)) {
+                        showMessage("Wrong username or password.");
+                    } else { showMessage(`Authentication failed: ${error.message}`); }
+                } finally { ui.authFields.submitBtn.disabled = false; }
+            };
+            
+            const handlePasswordReset = async (e) => {
+                e.preventDefault();
+                const email = ui.forgotPasswordFields.email.value;
+                try {
+                    await sendPasswordResetEmail(auth, email);
+                    closeModal(ui.modals.forgotPassword);
+                    showMessage('Password reset link sent! Check your email.');
+                } catch (e) { showMessage(`Error: ${e.message}`); }
+            };
+
+            const handleLogout = async () => {
+				try {
+                    // Close any open modals before logging out to prevent visual glitches
+                    closeModal(ui.modals.message);
+                    closeModal(ui.modals.editMeal);
+                    closeModal(ui.modals.dishForm);
+                    closeModal(ui.modals.migration);
+                    closeModal(ui.modals.healthGoals);
+                    ui.authFields.email.value = '';
+                    ui.authFields.password.value = '';
+                    await signOut(auth);
+                } catch (e) { console.error("Logout error:", e); }
+                // After logout, explicitly re-render UI for logged out state
+                clearAllData(); // Clear all current UI data
+                updateAuthUI(null); // Force UI update to show login screen and hide app content
+            };
+			
+            const clearAllData = () => {
+                console.log(`%c[DATA] Clearing all local data`, LOG_STYLE);
+                if (unsubscribeMealPlan) unsubscribeMealPlan();
+                if (unsubscribeInventory) unsubscribeInventory();
+                allDishes = []; inventory = []; currentWeekMealPlans = {};
+                renderDishes(); 
+                renderFridge(); 
+                if (document.getElementById('plan-view').classList.contains('active')) {
+                    updateMealCards({});
+                }
+                renderShoppingList({ missingBasic: [], presoakReminders: [] }); // Also clear shopping list
+            };
+
+            // --- App Initialization ---
+            const startApp = async () => {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    
+                    onAuthStateChanged(auth, async (user) => {
+                        console.log(`%c[AUTH] Auth state changed. User:`, LOG_STYLE, user?.uid);
+                        if (user) {
+                            currentUserId = user.uid;
+                            updateAuthUI(user);
+                            await fetchAllDishes();
+                            subscribeToInventory();
+                            renderDayView(new Date()); 
+                        } else { // User is logged out
+                             currentUserId = null;
+                             updateAuthUI(null); // Show login screen
+                        }
+                    });
+                    setupEventListeners();
+                } catch (e) {
+                    console.error("Initialization Error:", e);
+                    ui.mainContent.innerHTML = `<div class="text-center text-red-500 p-8"><h2>Application Error</h2><p>Could not initialize the application.</p></div>`;
+                }
+            };
+            startApp();
+        });
+    </script>
+</body>
+</html>
