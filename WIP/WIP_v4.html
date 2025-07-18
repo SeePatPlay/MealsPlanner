@@ -792,8 +792,36 @@
                     }
                     closeModal(ui.modals.dishForm);
                     await fetchAllDishes();
+					await syncInventoryFromDishes();
                     renderDishes();
                 } catch (e) { showMessage(`Error saving dish: ${e.message}`); }
+            };
+
+            // New function to regenerate inventory from all dishes
+            const syncInventoryFromDishes = async () => {
+                const userId = getFirestoreUserId();
+                if (!userId) return;
+
+                console.log('%c[DB] Syncing inventory from all dishes...', LOG_STYLE);
+                const inventoryCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'inventory');
+                const batch = writeBatch(db);
+                const existingInventoryMap = new Map(inventory.map(item => [item.name.toLowerCase(), item.id])); // Map existing items to their IDs
+                const allDishIngredients = new Set();
+
+                // Collect all unique basic ingredients from all dishes
+                allDishes.forEach(dish => {
+                    dish.ingredients.forEach(ing => allDishIngredients.add(ing.toLowerCase()));
+                });
+
+                // Add any new ingredients to inventory that are not already there
+                for (const ingredientName of allDishIngredients) {
+                    if (!existingInventoryMap.has(ingredientName)) {
+                        batch.set(doc(inventoryCollectionRef), { name: capitalize(ingredientName), inStock: false, createdAt: new Date() });
+                    }
+                }
+                await batch.commit();
+                // The onSnapshot listener for inventory will automatically re-render the fridge view.
+                console.log('%c[DB] Inventory sync complete.', 'color: green;');
             };
 
             const saveMealPlan = async () => {
